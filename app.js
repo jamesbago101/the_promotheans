@@ -11592,7 +11592,9 @@
             lightSwitchSound = new Audio('assets/sounds/light_switch.mp3');
             lightSwitchSound.volume = 0.7; // Set volume (70%)
             lightSwitchSound.preload = 'auto';
-            lightSwitchSound.muted = isGlobalAudioMuted(); // Sync with global mute state
+            // Don't mute initially - let it play even if bg music is muted for autoplay
+            // It will sync after user interaction
+            lightSwitchSound.muted = false;
             
             // Handle audio errors
             lightSwitchSound.addEventListener('error', (e) => {
@@ -11644,13 +11646,21 @@
                 console.log('lightsOnTexture:', lightsOnTexture);
                 console.log('Current state isLightsOn:', lightsOffSprite?.userData?.isLightsOn);
                 
-                // Play light switch sound effect (only if global audio is not muted)
-                if (lightSwitchSound && !isGlobalAudioMuted()) {
-                    // Reset to start and play
-                    lightSwitchSound.currentTime = 0;
-                    lightSwitchSound.play().catch((error) => {
-                        console.warn('Could not play light switch sound:', error);
-                    });
+                // Play light switch sound effect
+                // Check if user has interacted - if not, play anyway (bg music might be muted for autoplay)
+                const bgMusic = document.getElementById('bg-music');
+                const userHasInteracted = bgMusic && (bgMusic.currentTime > 0 || !bgMusic.paused);
+                
+                if (lightSwitchSound) {
+                    // If user hasn't interacted yet, play sound regardless of mute state
+                    // After interaction, respect the global mute state
+                    if (!userHasInteracted || !isGlobalAudioMuted()) {
+                        // Reset to start and play
+                        lightSwitchSound.currentTime = 0;
+                        lightSwitchSound.play().catch((error) => {
+                            console.warn('Could not play light switch sound:', error);
+                        });
+                    }
                 }
                 
                 if (lightsOffSprite && lightsOffTexture && lightsOnTexture) {
