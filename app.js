@@ -2154,9 +2154,24 @@
     let mutatorDotSound; // Audio for mutator dot hover effect
     
     // Helper function to check if global audio is muted
+    // Returns true only if user has interacted and explicitly muted, not for autoplay mute
     function isGlobalAudioMuted() {
         const bgMusic = document.getElementById('bg-music');
-        return bgMusic ? bgMusic.muted : false;
+        if (!bgMusic) return false;
+        
+        // Check if user has interacted (music has been played or user clicked audio control)
+        // If bg music is muted but hasn't been interacted with, it's muted for autoplay
+        // In that case, don't mute sound effects
+        const hasUserInteracted = bgMusic.currentTime > 0 || !bgMusic.paused || 
+                                  (bgMusic.readyState > 0 && bgMusic.readyState < 3);
+        
+        // Only respect mute state if user has interacted
+        // If muted for autoplay (no interaction), return false so sound effects can play
+        if (!hasUserInteracted && bgMusic.muted) {
+            return false; // Don't mute sound effects if bg music is muted for autoplay
+        }
+        
+        return bgMusic.muted;
     }
     
     // Function to sync all glitch sounds with global mute state
@@ -6072,7 +6087,8 @@
             // Create audio for mutator dot hover effect
             mutatorDotSound = new Audio('assets/sounds/mutator.mp3');
             mutatorDotSound.loop = true; // Loop the sound while hovering
-            mutatorDotSound.muted = isGlobalAudioMuted(); // Sync with global mute state
+            // Start unmuted - will sync after user interaction
+            mutatorDotSound.muted = false;
             let isMutatorSoundPlaying = false; // Track if sound is currently playing
 
             // Enhanced smooth pulsing animation (nicer wave effect)
@@ -6810,7 +6826,8 @@
             cupMoveSound = new Audio('assets/sounds/book_move.mp3');
             cupMoveSound.volume = 0.6; // Set volume (60%)
             cupMoveSound.preload = 'auto';
-            cupMoveSound.muted = isGlobalAudioMuted(); // Sync with global mute state
+            // Start unmuted - will sync after user interaction
+            cupMoveSound.muted = false;
             
             // Handle audio errors
             cupMoveSound.addEventListener('error', (e) => {
@@ -7187,7 +7204,8 @@
             glitchSpriteGlitchSound.volume = 0.6; // Set volume (60%)
             glitchSpriteGlitchSound.preload = 'auto';
             glitchSpriteGlitchSound.loop = true; // Loop continuously while hovering
-            glitchSpriteGlitchSound.muted = isGlobalAudioMuted(); // Sync with global mute state
+            // Start unmuted - will sync after user interaction
+            glitchSpriteGlitchSound.muted = false;
             
             // Handle audio errors
             glitchSpriteGlitchSound.addEventListener('error', (e) => {
@@ -8430,7 +8448,8 @@
             discordGlitchSound.volume = 0.6; // Set volume (60%)
             discordGlitchSound.preload = 'auto';
             discordGlitchSound.loop = true; // Loop continuously while hovering
-            discordGlitchSound.muted = isGlobalAudioMuted(); // Sync with global mute state
+            // Start unmuted - will sync after user interaction
+            discordGlitchSound.muted = false;
             
             // Handle audio errors
             discordGlitchSound.addEventListener('error', (e) => {
@@ -8598,7 +8617,8 @@
             promoGlitchSound.volume = 0.6; // Set volume (60%)
             promoGlitchSound.preload = 'auto';
             promoGlitchSound.loop = true; // Loop continuously while hovering
-            promoGlitchSound.muted = isGlobalAudioMuted(); // Sync with global mute state
+            // Start unmuted - will sync after user interaction
+            promoGlitchSound.muted = false;
             
             // Handle audio errors
             promoGlitchSound.addEventListener('error', (e) => {
@@ -8757,7 +8777,8 @@
             telegramGlitchSound.volume = 0.6; // Set volume (60%)
             telegramGlitchSound.preload = 'auto';
             telegramGlitchSound.loop = true; // Loop continuously while hovering
-            telegramGlitchSound.muted = isGlobalAudioMuted(); // Sync with global mute state
+            // Start unmuted - will sync after user interaction
+            telegramGlitchSound.muted = false;
             
             // Handle audio errors
             telegramGlitchSound.addEventListener('error', (e) => {
@@ -9691,7 +9712,8 @@
             wallArtPaperFlipSound = new Audio('assets/sounds/paper_flip.mp3');
             wallArtPaperFlipSound.volume = 0.6; // Set volume (60%)
             wallArtPaperFlipSound.preload = 'auto';
-            wallArtPaperFlipSound.muted = isGlobalAudioMuted(); // Sync with global mute state
+            // Start unmuted - will sync after user interaction
+            wallArtPaperFlipSound.muted = false;
             
             // Handle audio errors
             wallArtPaperFlipSound.addEventListener('error', (e) => {
@@ -10546,7 +10568,8 @@
             bookMoveSound = new Audio('assets/sounds/book_move.mp3');
             bookMoveSound.volume = 0.6; // Set volume (60%)
             bookMoveSound.preload = 'auto';
-            bookMoveSound.muted = isGlobalAudioMuted(); // Sync with global mute state
+            // Start unmuted - will sync after user interaction
+            bookMoveSound.muted = false;
             
             // Handle audio errors
             bookMoveSound.addEventListener('error', (e) => {
