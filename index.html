@@ -4,6 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Prometheans</title>
+    <!-- Theme-aware favicon -->
+    <link id="favicon" rel="icon" type="image/x-icon" href="assets/light_favicon.ico">
+    <script>
+        (function() {
+            function updateFavicon() {
+                const favicon = document.getElementById('favicon');
+                if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    favicon.href = 'assets/dark_favicon.ico';
+                } else {
+                    favicon.href = 'assets/light_favicon.ico';
+                }
+            }
+            // Set initial favicon
+            updateFavicon();
+            // Listen for theme changes
+            if (window.matchMedia) {
+                window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', updateFavicon);
+            }
+        })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Finger+Paint&display=swap" rel="stylesheet">
