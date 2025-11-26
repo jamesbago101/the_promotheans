@@ -2039,11 +2039,11 @@
         let isAudioUnlocked = false; // Track if audio has been unlocked by user interaction
         
         try {
-            teamCardPaperFlipSound = new Audio('assets/sounds/paper_flip.MP3');
+            teamCardPaperFlipSound = new Audio('assets/sounds/paper_flip.mp3');
             teamCardPaperFlipSound.volume = 0.6; // Set volume (60%)
             teamCardPaperFlipSound.preload = 'auto';
             teamCardPaperFlipSound.addEventListener('error', (e) => {
-                console.warn('Failed to load paper_flip.MP3:', e);
+                console.warn('Failed to load paper_flip.mp3:', e);
                 teamCardPaperFlipSound = null;
             });
         } catch (error) {
