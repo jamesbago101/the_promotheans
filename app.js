@@ -6039,7 +6039,7 @@
             mutatorCapsuleDot.hitArea = new PIXI.Circle(0, 0, maxHitRadius);
 
             // Create audio for mutator dot hover effect
-            mutatorDotSound = new Audio('assets/sounds/mutator.MP3');
+            mutatorDotSound = new Audio('assets/sounds/mutator.mp3');
             mutatorDotSound.loop = true; // Loop the sound while hovering
             mutatorDotSound.muted = isGlobalAudioMuted(); // Sync with global mute state
             let isMutatorSoundPlaying = false; // Track if sound is currently playing
@@ -6765,7 +6765,7 @@
             cupSprite.anchor.set(0.5); // Keep anchor at center for correct positioning
 
             // Load cup move sound effect
-            cupMoveSound = new Audio('assets/sounds/book_move.MP3');
+            cupMoveSound = new Audio('assets/sounds/book_move.mp3');
             cupMoveSound.volume = 0.6; // Set volume (60%)
             cupMoveSound.preload = 'auto';
             cupMoveSound.muted = isGlobalAudioMuted(); // Sync with global mute state
@@ -9646,7 +9646,7 @@
             };
 
             // Load paper flip sound effect for wall art
-            wallArtPaperFlipSound = new Audio('assets/sounds/paper_flip.MP3');
+            wallArtPaperFlipSound = new Audio('assets/sounds/paper_flip.mp3');
             wallArtPaperFlipSound.volume = 0.6; // Set volume (60%)
             wallArtPaperFlipSound.preload = 'auto';
             wallArtPaperFlipSound.muted = isGlobalAudioMuted(); // Sync with global mute state
@@ -10501,7 +10501,7 @@
             bookSprite.anchor.set(0.5);
 
             // Load book move sound effect
-            bookMoveSound = new Audio('assets/sounds/book_move.MP3');
+            bookMoveSound = new Audio('assets/sounds/book_move.mp3');
             bookMoveSound.volume = 0.6; // Set volume (60%)
             bookMoveSound.preload = 'auto';
             bookMoveSound.muted = isGlobalAudioMuted(); // Sync with global mute state
@@ -11558,7 +11558,7 @@
             lightsSwitchSprite.anchor.set(0.5, 0);
 
             // Load light switch sound effect
-            lightSwitchSound = new Audio('assets/sounds/light_switch.MP3');
+            lightSwitchSound = new Audio('assets/sounds/light_switch.mp3');
             lightSwitchSound.volume = 0.7; // Set volume (70%)
             lightSwitchSound.preload = 'auto';
             lightSwitchSound.muted = isGlobalAudioMuted(); // Sync with global mute state
