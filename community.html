@@ -3232,11 +3232,11 @@
         let isCommunityAudioUnlocked = false;
         
         try {
-            communityPaperFlipSound = new Audio('assets/sounds/paper_flip.MP3');
+            communityPaperFlipSound = new Audio('assets/sounds/paper_flip.mp3');
             communityPaperFlipSound.volume = 0.6; // Set volume (60%)
             communityPaperFlipSound.preload = 'auto';
             communityPaperFlipSound.addEventListener('error', (e) => {
-                console.warn('Failed to load paper_flip.MP3:', e);
+                console.warn('Failed to load paper_flip.mp3:', e);
                 communityPaperFlipSound = null;
             });
         } catch (error) {
