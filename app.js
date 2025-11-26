@@ -6193,21 +6193,32 @@
                                document.fonts.check(`12px ${fontFamily}`);
                     }
                     
+                    // Wait for fonts.ready first (ensures Google Fonts are loaded)
+                    try {
+                        await Promise.race([
+                            document.fonts.ready,
+                            new Promise(resolve => setTimeout(resolve, 2000)) // 2 second timeout
+                        ]);
+                    } catch (e) {
+                        console.warn('Error waiting for fonts.ready:', e);
+                    }
+                    
                     let fontLoaded = checkFont(GLOBAL_FONT_FAMILY);
                     if (!fontLoaded) {
-                        // Wait a bit more for font to load
+                        // Wait a bit more for font to load with more attempts
                         let attempts = 0;
-                        const maxAttempts = 10; // 1 second
+                        const maxAttempts = 20; // 2 seconds
                         while (!fontLoaded && attempts < maxAttempts) {
                             await new Promise(resolve => setTimeout(resolve, 100));
                             fontLoaded = checkFont(GLOBAL_FONT_FAMILY);
                             attempts++;
                         }
+                    }
+                    
                     if (!fontLoaded) {
-                        console.warn(`${GLOBAL_FONT_FAMILY} font not detected for mutator text, but proceeding`);
-                        } else {
-                            console.log(`✓ ${GLOBAL_FONT_FAMILY} font confirmed loaded for mutator text`);
-                        }
+                        console.warn(`${GLOBAL_FONT_FAMILY} font not detected for mutator text, but proceeding with fallback`);
+                    } else {
+                        console.log(`✓ ${GLOBAL_FONT_FAMILY} font confirmed loaded for mutator text`);
                     }
                 }
 

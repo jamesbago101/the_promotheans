@@ -27,6 +27,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Finger+Paint&display=swap" rel="stylesheet">
+    <!-- Preload Google Font for better performance -->
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Finger+Paint&display=swap">
     <link rel="preload" href="assets/digital.ttf" as="font" type="font/ttf" crossorigin>
     <link rel="stylesheet" href="styles.css">
     <style>
@@ -35,7 +37,7 @@
             src: url('assets/digital.ttf') format('truetype');
             font-weight: normal;
             font-style: normal;
-            font-display: block;
+            font-display: swap; /* Use swap for better loading - shows fallback immediately */
         }
 
         /* Loading Screen for Redirects (same as community.html) */
