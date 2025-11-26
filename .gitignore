@@ -1,0 +1,10 @@
+# Large audio files (exceed GitHub's 100MB limit)
+assets/sounds/bg_music1.mp3
+
+# Node modules
+node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db
+
