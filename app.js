@@ -168,7 +168,7 @@
 
         // Set initial volume (50% by default)
         bgMusic.volume = 0.5;
-        bgMusic.muted = false; // Start unmuted
+        bgMusic.muted = true; // Start muted to allow autoplay
         bgMusic.loop = true; // Ensure looping is enabled
 
         // Track state
@@ -227,6 +227,10 @@
             // If audio has never been started (truly first time), try to start it
             if (!hasEverPlayed && !userInteracted && bgMusic.currentTime === 0) {
                 console.log('First click - attempting to start audio...');
+                // Unmute if it was muted for autoplay
+                if (bgMusic.muted) {
+                    bgMusic.muted = false;
+                }
                 const playPromise = bgMusic.play();
                 
                 if (playPromise !== undefined) {
@@ -234,7 +238,6 @@
                         isPlaying = true;
                         userInteracted = true;
                         hasEverPlayed = true;
-                        // Don't change mute state when starting
                         updateIcon();
                         console.log('Background music started successfully, muted:', bgMusic.muted);
                     }).catch((error) => {
@@ -244,6 +247,15 @@
                         console.warn('Audio playback failed. User may need to interact with page first.');
                     });
                 }
+                return;
+            }
+            
+            // If already playing but muted (from autoplay), unmute on user interaction
+            if (isPlaying && bgMusic.muted && !userInteracted) {
+                bgMusic.muted = false;
+                userInteracted = true;
+                updateIcon();
+                console.log('Background music unmuted after user interaction');
                 return;
             }
 
@@ -307,37 +319,56 @@
         audioControl.style.pointerEvents = 'auto';
         audioControl.style.cursor = 'pointer';
 
-        // Try to start playing immediately and retry if blocked
+        // Try to start playing immediately (muted autoplay is allowed by browsers)
         function attemptAutoplay() {
             if (!userInteracted && !isPlaying) {
-                console.log('Attempting autoplay...');
+                console.log('Attempting muted autoplay...');
+                // Start muted - browsers allow muted autoplay
+                bgMusic.muted = true;
                 bgMusic.play().then(() => {
                     isPlaying = true;
-                    userInteracted = true;
                     hasEverPlayed = true;
-                    // Don't force unmute - respect current mute state
                     updateIcon();
-                    console.log('Background music auto-started successfully, muted:', bgMusic.muted);
+                    console.log('Background music auto-started (muted), waiting for user interaction to unmute');
+                    
+                    // Unmute after first user interaction
+                    const unmuteHandler = () => {
+                        if (bgMusic.muted && isPlaying) {
+                            bgMusic.muted = false;
+                            userInteracted = true;
+                            updateIcon();
+                            console.log('Background music unmuted after user interaction');
+                        }
+                        // Remove handler after first interaction
+                        document.removeEventListener('click', unmuteHandler);
+                        document.removeEventListener('touchstart', unmuteHandler);
+                        document.removeEventListener('keydown', unmuteHandler);
+                    };
+                    document.addEventListener('click', unmuteHandler, { once: true });
+                    document.addEventListener('touchstart', unmuteHandler, { once: true });
+                    document.addEventListener('keydown', unmuteHandler, { once: true });
                 }).catch((error) => {
-                    console.log('Autoplay blocked - will retry:', error);
+                    console.log('Autoplay blocked - will retry after user interaction:', error);
                     // Retry after user interaction (any click on page)
                     const interactionHandler = () => {
+                        bgMusic.muted = false; // Unmute when user interacts
                         bgMusic.play().then(() => {
                             isPlaying = true;
                             userInteracted = true;
                             hasEverPlayed = true;
-                            // Don't force unmute - respect current mute state
                             updateIcon();
-                            console.log('Background music started after user interaction, muted:', bgMusic.muted);
+                            console.log('Background music started after user interaction');
                         }).catch((err) => {
                             console.log('Still blocked after interaction:', err);
                         });
                         // Remove handler after first interaction
                         document.removeEventListener('click', interactionHandler);
                         document.removeEventListener('touchstart', interactionHandler);
+                        document.removeEventListener('keydown', interactionHandler);
                     };
                     document.addEventListener('click', interactionHandler, { once: true });
                     document.addEventListener('touchstart', interactionHandler, { once: true });
+                    document.addEventListener('keydown', interactionHandler, { once: true });
                     updateIcon();
                 });
             }
