@@ -9,21 +9,6 @@
     // Get Application and Assets from PIXI namespace (CDN version)
     const { Application, Assets, Sprite, AnimatedSprite, Graphics, Container, Text, TextStyle } = PIXI;
 
-    // Declare sprite variables at the top to avoid temporal dead zone issues
-    // These will be initialized later when assets are loaded
-    let backgroundSprite = null;
-    let mutatorBgSprite = null;
-    let mutatorCapsuleSprite = null;
-    let mutatorCapsuleStrokeSprite = null;
-    let glitchSprite = null;
-    let cctvSprite = null;
-    let discordSprite = null;
-    let promoSprite = null;
-    let telegramSprite = null;
-    let wallArtSprite = null;
-    let blaisedSprite = null;
-    let blaisedAuraSprite = null;
-
     // Global banda
     const GLOBAL_FONT_FAMILY = 'Finger Paint';
     const GLOBAL_FONT_FAMILY_WITH_FALLBACK = `"${GLOBAL_FONT_FAMILY}", sans-serif`;
@@ -398,9 +383,12 @@
         
         // Aggressive audio unlock: detect ANY user interaction to unlock audio
         // This includes mouse movement, touch, keypress, etc.
+        // More aggressive on mobile - listen on window, document, and body
         let audioUnlocked = false;
-        const unlockAudioOnInteraction = () => {
+        const unlockAudioOnInteraction = (event) => {
             if (audioUnlocked) return;
+            
+            console.log('User interaction detected:', event?.type || 'unknown');
             
             // Unlock audio on first interaction
             if (bgMusic && bgMusic.muted && isPlaying) {
@@ -420,43 +408,57 @@
                 }).catch((err) => {
                     console.log('Could not start audio:', err);
                 });
+            } else if (bgMusic) {
+                // Just mark as interacted even if already playing
+                userInteracted = true;
+                console.log('User interaction registered');
             }
             
             audioUnlocked = true;
             // Remove all listeners after first unlock
-            document.removeEventListener('mousemove', unlockAudioOnInteraction);
-            document.removeEventListener('mousedown', unlockAudioOnInteraction);
-            document.removeEventListener('mouseup', unlockAudioOnInteraction);
-            document.removeEventListener('touchstart', unlockAudioOnInteraction);
-            document.removeEventListener('touchend', unlockAudioOnInteraction);
-            document.removeEventListener('touchmove', unlockAudioOnInteraction);
-            document.removeEventListener('touchcancel', unlockAudioOnInteraction);
-            document.removeEventListener('keydown', unlockAudioOnInteraction);
-            document.removeEventListener('keyup', unlockAudioOnInteraction);
-            document.removeEventListener('pointerdown', unlockAudioOnInteraction);
-            document.removeEventListener('pointermove', unlockAudioOnInteraction);
-            window.removeEventListener('touchstart', unlockAudioOnInteraction);
-            window.removeEventListener('touchmove', unlockAudioOnInteraction);
+            const targets = [document, window, document.body].filter(Boolean);
+            const eventTypes = ['mousemove', 'mousedown', 'mouseup', 'click', 
+                              'touchstart', 'touchend', 'touchmove', 'touchcancel',
+                              'keydown', 'keyup', 
+                              'pointerdown', 'pointerup', 'pointermove', 'pointercancel'];
+            
+            targets.forEach(target => {
+                eventTypes.forEach(eventType => {
+                    target.removeEventListener(eventType, unlockAudioOnInteraction);
+                });
+            });
         };
         
         // Listen for ANY user interaction to unlock audio
-        // Mouse movement counts as interaction on some browsers
-        // For mobile: touchstart and touchmove are critical
-        const options = { once: true, passive: true };
-        document.addEventListener('mousemove', unlockAudioOnInteraction, options);
-        document.addEventListener('mousedown', unlockAudioOnInteraction, { once: true });
-        document.addEventListener('mouseup', unlockAudioOnInteraction, { once: true });
-        document.addEventListener('touchstart', unlockAudioOnInteraction, options);
-        document.addEventListener('touchend', unlockAudioOnInteraction, options);
-        document.addEventListener('touchmove', unlockAudioOnInteraction, options);
-        document.addEventListener('touchcancel', unlockAudioOnInteraction, options);
-        document.addEventListener('keydown', unlockAudioOnInteraction, { once: true });
-        document.addEventListener('keyup', unlockAudioOnInteraction, { once: true });
-        document.addEventListener('pointerdown', unlockAudioOnInteraction, options);
-        document.addEventListener('pointermove', unlockAudioOnInteraction, options);
-        // Also listen on window for mobile touch events
-        window.addEventListener('touchstart', unlockAudioOnInteraction, options);
-        window.addEventListener('touchmove', unlockAudioOnInteraction, options);
+        // Add listeners to document, window, and body for maximum coverage
+        // Especially important for mobile touch events
+        const targets = [document, window, document.body].filter(Boolean);
+        const touchOptions = { passive: true, capture: false };
+        const mouseOptions = { passive: true, capture: false };
+        
+        targets.forEach(target => {
+            // Mouse events (desktop)
+            target.addEventListener('mousemove', unlockAudioOnInteraction, { once: true, ...mouseOptions });
+            target.addEventListener('mousedown', unlockAudioOnInteraction, { once: true });
+            target.addEventListener('mouseup', unlockAudioOnInteraction, { once: true });
+            target.addEventListener('click', unlockAudioOnInteraction, { once: true });
+            
+            // Touch events (mobile) - most important for mobile
+            target.addEventListener('touchstart', unlockAudioOnInteraction, { once: true, ...touchOptions });
+            target.addEventListener('touchend', unlockAudioOnInteraction, { once: true });
+            target.addEventListener('touchmove', unlockAudioOnInteraction, { once: true, ...touchOptions });
+            target.addEventListener('touchcancel', unlockAudioOnInteraction, { once: true });
+            
+            // Pointer events (unified API for both mouse and touch)
+            target.addEventListener('pointerdown', unlockAudioOnInteraction, { once: true });
+            target.addEventListener('pointerup', unlockAudioOnInteraction, { once: true });
+            target.addEventListener('pointermove', unlockAudioOnInteraction, { once: true, passive: true });
+            target.addEventListener('pointercancel', unlockAudioOnInteraction, { once: true });
+            
+            // Keyboard events
+            target.addEventListener('keydown', unlockAudioOnInteraction, { once: true });
+            target.addEventListener('keyup', unlockAudioOnInteraction, { once: true });
+        });
 
         // Handle audio errors
         bgMusic.addEventListener('error', (e) => {
@@ -718,7 +720,7 @@
             // Resume all paused animations (AnimatedSprite only)
             const animatedSprites = [
                 globalMutatorCapsuleSprite,
-                backgroundSprite, // May be undefined if not initialized yet
+                backgroundSprite,
                 glitchSprite,
                 cctvSprite,
                 discordSprite,
@@ -727,7 +729,7 @@
                 wallArtSprite,
                 blaisedSprite,
                 blaisedAuraSprite
-            ].filter(sprite => sprite !== undefined && sprite !== null); // Filter out undefined/null sprites
+            ];
 
             animatedSprites.forEach(sprite => {
                 if (sprite) {
@@ -827,7 +829,7 @@
             // Resume all paused animations (AnimatedSprite only)
             const animatedSprites = [
                 globalMutatorCapsuleSprite,
-                backgroundSprite, // May be undefined if not initialized yet
+                backgroundSprite,
                 glitchSprite,
                 cctvSprite,
                 discordSprite,
@@ -836,7 +838,7 @@
                 wallArtSprite,
                 blaisedSprite,
                 blaisedAuraSprite
-            ].filter(sprite => sprite !== undefined && sprite !== null); // Filter out undefined/null sprites
+            ];
 
             animatedSprites.forEach(sprite => {
                 if (sprite && sprite.playing === false) {
@@ -874,11 +876,9 @@
             if (mainLogo) mainLogo.style.display = 'none';
             if (headerLogoContainer) headerLogoContainer.style.display = 'none';
 
-            // Load loading screen logo and flashlight image (preload in parallel for speed)
-            const [logoTexture, flashlightTexture] = await Promise.all([
-                Assets.load('assets/loading_screen_logo.png'),
-                Assets.load('assets/flashlight.png')
-            ]);
+            // Load loading screen logo and flashlight image
+            const logoTexture = await Assets.load('assets/loading_screen_logo.png');
+            const flashlightTexture = await Assets.load('assets/flashlight.png');
 
             // Create loading screen container
             loadingScreen = new Container();
@@ -2206,17 +2206,22 @@
     }
 
     // Background sprite and texture dimensions
-    // (Variables already declared at top of function to avoid temporal dead zone)
+    let backgroundSprite;
+    let mutatorBgSprite;
+    let mutatorCapsuleSprite;
+    let mutatorCapsuleStrokeSprite; // Stroke overlay for hover effect
     let mutatorCapsuleDot; // Pulsing dot at center
     let mutatorCapsuleCircleText; // Circle with "click to explore" text
     let mutatorCapsuleTextSprite; // Text "MUTATOR" that appears on mutator capsule hover
     let mutatorCapsuleLabelText; // Simple label text for mobile/tablet (just "Mutator")
     let cupSprite;
-    // glitchSprite, cctvSprite, discordSprite already declared at top
+    let glitchSprite;
     let eyeLogoSprite;
+    let cctvSprite;
     let cctvTextSprite; // Text "X Account" that appears on CCTV hover
     let cctvDot; // Pulsing dot at center of CCTV
     let cctvCircleText; // Circle with "click to explore" text
+    let discordSprite; // Discord animated sprite (discord1.png to discord8.png)
     let discordGlitchSound; // Audio for discord glitch effect
     let promoGlitchSound; // Audio for promo glitch effect
     let telegramGlitchSound; // Audio for telegram glitch effect
@@ -2279,10 +2284,14 @@
             cupMoveSound.muted = isMuted;
         }
     }
-    // promoSprite, telegramSprite, wallArtSprite, blaisedSprite, blaisedAuraSprite already declared at top
+    let promoSprite; // Promo animated sprite (promo1.png to promo10.png)
+    let telegramSprite; // Telegram animated sprite (telegram1.png to telegram9.png)
     let cctvStrokeSprite; // Animated stroke overlay for hover effect (cctv1_stroke.png to cctv3_stroke.png)
     let cctvLabelText; // Simple label text for mobile/tablet (just "X Account")
+    let wallArtSprite; // Animated wall art sprite (wall_art1.png to wall_art6.png)
     let wallArtDot; // Pulsing dot at center of wall art
+    let blaisedSprite; // Animated blaised sprite (blaised1.png to blaised6.png)
+    let blaisedAuraSprite; // Animated blaised aura sprite (blaised1_aura.png to blaised6_aura.png) with color dodge blending
     let blaisedAuraApp; // Separate PIXI application for aura sprite with CSS mix-blend-mode
     let blaisedAction2Sprite; // Animated blaised action2 sprite (blaised_action2_1.png, blaised_action2_2.png)
     let blaisedAction2AuraSprite; // Animated blaised action2 aura sprite with color dodge blending
@@ -5695,15 +5704,11 @@
         console.log('Loading background frames...');
         const backgroundTextures = [];
 
-        // Load all 3 background frames in parallel for faster loading
-        const bgPromises = [];
+        // Load all 3 background frames (bg1.png, bg2.png, bg3.png)
         for (let i = 1; i <= 3; i++) {
-            bgPromises.push(Assets.load(`assets/bg${i}.png`));
-        }
-        const bgTextures = await Promise.all(bgPromises);
-        for (let i = 0; i < bgTextures.length; i++) {
-            backgroundTextures.push(bgTextures[i]);
-            console.log(`  Loaded bg${i + 1}.png:`, bgTextures[i].width, 'x', bgTextures[i].height);
+            const texture = await Assets.load(`assets/bg${i}.png`);
+            backgroundTextures.push(texture);
+            console.log(`  Loaded bg${i}.png:`, texture.width, 'x', texture.height);
         }
 
         // Get dimensions from first frame
@@ -5744,17 +5749,16 @@
             mutatorBgSprite = new Sprite(mutatorBgTexture);
             mutatorBgSprite.anchor.set(0.5);
 
-            // Load mutator capsule frames for animation (in parallel for faster loading)
+            // Load mutator capsule frames for animation
             console.log('Loading mutator capsule frames...');
             const mutatorCapsuleTexturePaths = Array.from({ length: 10 }, (_, index) => `assets/mutator_capsule${index + 1}.png`);
-            // Load all mutator capsule textures in parallel
-            const mutatorCapsuleTextures = await Promise.all(
-                mutatorCapsuleTexturePaths.map(path => Assets.load(path))
-            );
-            // Log loaded textures
-            mutatorCapsuleTextures.forEach((texture, index) => {
-                console.log(`  Loaded ${mutatorCapsuleTexturePaths[index]}:`, texture.width, 'x', texture.height);
-            });
+            const mutatorCapsuleTextures = [];
+
+            for (const texturePath of mutatorCapsuleTexturePaths) {
+                const texture = await Assets.load(texturePath);
+                mutatorCapsuleTextures.push(texture);
+                console.log(`  Loaded ${texturePath}:`, texture.width, 'x', texture.height);
+            }
 
             // Load mutator capsule stroke overlay for hover effect
             const mutatorCapsuleStrokeTexture = await Assets.load('assets/mutator_capsule_stroke.png');
@@ -6620,7 +6624,7 @@
                     }
                     
                     // Play mutator sound if not already playing and global audio is not muted
-                    if (mutatorDotSound && !isMutatorSoundPlaying) {
+                    if (mutatorDotSound && !isMutatorSoundPlaying && !isGlobalAudioMuted()) {
                         mutatorDotSound.play().catch((error) => {
                             console.error('Error playing mutator dot sound:', error);
                         });
@@ -6705,7 +6709,7 @@
                     }
                     
                     // Play mutator sound if not already playing and global audio is not muted
-                    if (mutatorDotSound && !isMutatorSoundPlaying) {
+                    if (mutatorDotSound && !isMutatorSoundPlaying && !isGlobalAudioMuted()) {
                         mutatorDotSound.play().catch((error) => {
                             console.error('Error playing mutator dot sound:', error);
                         });
