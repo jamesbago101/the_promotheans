@@ -183,6 +183,8 @@
     let bookLabelText; // Simple label text for mobile/tablet (just "Community")
     let bookStrokeSprite; // Stroke overlay for hover effect (book_stroke.png)
     let bookCircleText; // Circle with "click to explore" text
+    let screenSprite; // Screen sprite (screen.png)
+    let screenErrorTextSprite; // 404 error text sprite with glitch animation
     let lightsOffSprite; // Lights off sprite with swinging animation
     let lightsSwitchSprite; // Lights switch sprite with swinging animation
     let lightsOffTexture; // Lights off texture (for toggling)
@@ -3865,6 +3867,56 @@
             }
         }
 
+        // Screen sprite: use custom scale and position from config - same technique as book
+        if (screenSprite && screenSprite.texture) {
+            // Check if screen has custom config
+            if (screenSprite.userData && screenSprite.userData.config) {
+                const screenConfig = screenSprite.userData.config;
+
+                // Use custom scale if specified, otherwise use bg1 scale
+                // The screen scale should be relative to bg1's scale
+                if (screenConfig.scale !== null && screenConfig.scale !== undefined) {
+                    // Multiply by bg1's scale so screen scales with bg1
+                    const screenScale = screenConfig.scale * scale;
+                    screenSprite.scale.set(screenScale);
+                } else {
+                    // Auto-scale to match bg1 (original behavior)
+                    const screenWidth = screenSprite.texture.orig?.width || screenSprite.texture.width || screenSprite.texture.baseTexture.width || 1920;
+                    const screenHeight = screenSprite.texture.orig?.height || screenSprite.texture.height || screenSprite.texture.baseTexture.height || 1080;
+
+                    if (screenWidth === imageWidth && screenHeight === imageHeight) {
+                        screenSprite.scale.set(scale);
+                    } else {
+                        const bg1DisplayedWidth = imageWidth * scale;
+                        const bg1DisplayedHeight = imageHeight * scale;
+
+                        const screenScaleX = bg1DisplayedWidth / screenWidth;
+                        const screenScaleY = bg1DisplayedHeight / screenHeight;
+
+                        const screenScale = Math.max(screenScaleX, screenScaleY);
+                        screenSprite.scale.set(screenScale);
+                    }
+                }
+            } else {
+                // Default behavior: scale to match bg1
+                const screenWidth = screenSprite.texture.orig?.width || screenSprite.texture.width || screenSprite.texture.baseTexture.width || 1920;
+                const screenHeight = screenSprite.texture.orig?.height || screenSprite.texture.height || screenSprite.texture.baseTexture.height || 1080;
+
+                if (screenWidth === imageWidth && screenHeight === imageHeight) {
+                    screenSprite.scale.set(scale);
+                } else {
+                    const bg1DisplayedWidth = imageWidth * scale;
+                    const bg1DisplayedHeight = imageHeight * scale;
+
+                    const screenScaleX = bg1DisplayedWidth / screenWidth;
+                    const screenScaleY = bg1DisplayedHeight / screenHeight;
+
+                    const screenScale = Math.max(screenScaleX, screenScaleY);
+                    screenSprite.scale.set(screenScale);
+                }
+            }
+        }
+
         // Only reposition the sprite if not dragging (preserve position during drag)
         // IMPORTANT: Always recenter background on resize to ensure sprites stay fixed
         // This ensures Discord, Promo, and all sprites maintain correct positions
@@ -4517,6 +4569,32 @@
                     bookStrokeSprite.x = bookSprite.x;
                     bookStrokeSprite.y = bookSprite.y;
                 }
+            }
+
+            // Screen sprite: position using config (bg1.png coordinates) - same technique as book
+            if (screenSprite && screenSprite.userData && screenSprite.userData.config) {
+                const screenConfig = screenSprite.userData.config;
+
+                // Convert bg1.png coordinates to world coordinates
+                const bg1DisplayedWidth = imageWidth * scale;
+                const bg1DisplayedHeight = imageHeight * scale;
+
+                const bg1Left = backgroundSprite.x - bg1DisplayedWidth / 2;
+                const bg1Top = backgroundSprite.y - bg1DisplayedHeight / 2;
+
+                const normalizedX = screenConfig.bg1X / imageWidth;
+                const normalizedY = screenConfig.bg1Y / imageHeight;
+
+                screenSprite.x = bg1Left + (normalizedX * bg1DisplayedWidth) + screenConfig.offsetX;
+                screenSprite.y = bg1Top + (normalizedY * bg1DisplayedHeight) + screenConfig.offsetY;
+
+                // Make screen sprite visible once positioned
+                screenSprite.visible = true;
+            } else if (screenSprite) {
+                // Default: same position as bg1 - screen sprite always moves with background
+                screenSprite.x = backgroundSprite.x;
+                screenSprite.y = backgroundSprite.y;
+                screenSprite.visible = true;
             }
 
             // Update mutator capsule text position and font size
@@ -5904,6 +5982,28 @@
                 }
             }
 
+            // Screen sprite: update position during drag (maintain relative position to bg1)
+            if (screenSprite) {
+                if (screenSprite.userData && screenSprite.userData.config) {
+                    // Use config-based positioning during drag
+                    const screenConfig = screenSprite.userData.config;
+                    const bg1DisplayedWidth = imageWidth * currentScale;
+                    const bg1DisplayedHeight = imageHeight * currentScale;
+
+                    const bg1Left = newX - bg1DisplayedWidth / 2;
+                    const bg1Top = newY - bg1DisplayedHeight / 2;
+
+                    const normalizedX = screenConfig.bg1X / imageWidth;
+                    const normalizedY = screenConfig.bg1Y / imageHeight;
+
+                    screenSprite.x = bg1Left + (normalizedX * bg1DisplayedWidth) + screenConfig.offsetX;
+                    screenSprite.y = bg1Top + (normalizedY * bg1DisplayedHeight) + screenConfig.offsetY;
+                } else {
+                    screenSprite.x = newX;
+                    screenSprite.y = newY;
+                }
+            }
+
             // Update mutator capsule text position and font size
             updateMutatorText();
 
@@ -5971,8 +6071,8 @@
     // Wall art: 6 frames + 6 strokes = 12
     // Book: 1 + 1 stroke = 2
     // Lights: 3 (off, switch, ray)
-    // Total: 3 + 12 + 1 + 6 + 2 + 6 + 8 + 10 + 9 + 12 + 12 + 2 + 3 = 98
-    totalAssetsToLoad = 98;
+    // Total: 3 + 12 + 1 + 6 + 2 + 6 + 8 + 10 + 9 + 12 + 12 + 2 + 3 + 1 (screen) = 99
+    totalAssetsToLoad = 99;
     loadedAssetsCount = 0;
     console.log(`Starting to load ${totalAssetsToLoad} assets...`);
 
@@ -11424,6 +11524,242 @@
 
         } catch (error) {
             console.error('Error loading Book textures:', error);
+        }
+
+        // Load Screen sprite (screen.png) with 404 error animation
+        try {
+            console.log('Loading Screen sprite...');
+            const screenTexture = await Assets.load('assets/screen.png');
+            console.log(`  Loaded screen.png:`, screenTexture.width, 'x', screenTexture.height);
+
+            // Create Sprite from the screen texture
+            screenSprite = new Sprite(screenTexture);
+            screenSprite.anchor.set(0.5);
+
+            // Hide sprite initially until resizeBackground positions it correctly
+            screenSprite.visible = false;
+            screenSprite.alpha = 1.0;
+
+            console.log('Screen Sprite created');
+
+            // Get screen image dimensions
+            const screenImageWidth = screenTexture.orig?.width || screenTexture.width || screenTexture.baseTexture.width || 1920;
+            const screenImageHeight = screenTexture.orig?.height || screenTexture.height || screenTexture.baseTexture.height || 1080;
+
+            console.log(`Screen texture loaded: ${screenImageWidth}x${screenImageHeight}`);
+
+            // Screen config
+            // Position on bg1.png:
+            // Top Y: 1796px, Left X: 2089px
+            // Bottom Y: 2502px, Right X: 3205px
+            // Center X: (2089 + 3205) / 2 = 2647
+            // Center Y: (1796 + 2502) / 2 = 2149
+            // Dimensions: Width: 1116px, Height: 706px
+            const screenConfig = {
+                bg1X: 2647, // Center X position on bg1.png
+                bg1Y: 2149, // Center Y position on bg1.png
+                screenWidth: 1116, // Width of screen on bg1.png
+                screenHeight: 706, // Height of screen on bg1.png
+                scale: null, // Will be calculated based on bg1 scale
+                offsetX: 0,
+                offsetY: 0
+            };
+
+            // Calculate scale to make screen image fit into designated space on bg1.png
+            if (screenImageWidth && screenImageHeight && screenConfig.screenWidth && screenConfig.screenHeight) {
+                const relativeScaleX = screenConfig.screenWidth / screenImageWidth;
+                const relativeScaleY = screenConfig.screenHeight / screenImageHeight;
+
+                // Use the smaller scale to ensure it fits (maintains aspect ratio)
+                screenConfig.scale = Math.min(relativeScaleX, relativeScaleY);
+
+                console.log(`Screen config:`);
+                console.log(`  Screen dimensions on bg1.png: ${screenConfig.screenWidth}x${screenConfig.screenHeight}`);
+                console.log(`  BG1 position (center): (${screenConfig.bg1X}, ${screenConfig.bg1Y})`);
+                console.log(`  Actual screen image size: ${screenImageWidth}x${screenImageHeight}`);
+                console.log(`  Calculated scale: ${screenConfig.scale}`);
+            } else {
+                // Fallback: use natural size
+                screenConfig.scale = 1.0;
+                console.warn('Screen: Could not calculate scale, using default 1.0');
+            }
+
+            // Store config in userData for screen sprite
+            screenSprite.userData = screenSprite.userData || {};
+            screenSprite.userData.config = screenConfig;
+            screenSprite.userData.baseScale = 1.0; // Will be set after first resizeBackground call
+
+            // Create 404 error text sprite with glitch animation
+            // Responsive font size based on screen dimensions - BIGGER FONTS
+            const getScreenErrorFontSize = () => {
+                const minDimension = Math.min(window.innerWidth, window.innerHeight);
+                if (minDimension <= 480) return 48;  // Increased from 32
+                if (minDimension <= 768) return 72;  // Increased from 48
+                if (minDimension <= 1024) return 96; // Increased from 56
+                return 120; // Desktop default - Increased from 72
+            };
+
+            const screenErrorTextStyle = new TextStyle({
+                fontFamily: 'monospace',
+                fontSize: getScreenErrorFontSize(),
+                fill: 0xFF0000, // Red color for error
+                align: 'center',
+                fontWeight: 'bold',
+                stroke: 0x000000,
+                strokeThickness: 6, // Increased from 4 for better visibility
+                dropShadow: true,
+                dropShadowColor: 0x000000,
+                dropShadowDistance: 4,
+                dropShadowBlur: 8,
+            });
+
+            screenErrorTextSprite = new Text({
+                text: 'ERROR 404',
+                style: screenErrorTextStyle,
+            });
+            screenErrorTextSprite.anchor.set(0.5);
+            screenErrorTextSprite.visible = true;
+            screenErrorTextSprite.alpha = 1.0;
+
+            // Store glitch animation state and responsive font function
+            screenErrorTextSprite.userData = {
+                glitchTime: 0,
+                glitchIntensity: 0,
+                baseX: 0,
+                baseY: 0,
+                isGlitching: true,
+                getResponsiveFontSize: getScreenErrorFontSize
+            };
+
+            // Add error text as child of screen sprite so it moves with it
+            screenSprite.addChild(screenErrorTextSprite);
+
+            // Add screen sprite to stage
+            app.stage.addChild(screenSprite);
+
+            // Glitch animation ticker - ENHANCED WITH MORE EFFECTS
+            let screenGlitchTicker = null;
+            const startScreenGlitchAnimation = () => {
+                if (screenGlitchTicker) return; // Already running
+
+                screenGlitchTicker = app.ticker.add(() => {
+                    if (!screenErrorTextSprite || !screenErrorTextSprite.parent) return;
+
+                    const glitchData = screenErrorTextSprite.userData;
+                    glitchData.glitchTime += 0.2; // Faster glitch animation
+
+                    // Multiple glitch intensity waves for more complex patterns
+                    const intensity1 = Math.sin(glitchData.glitchTime * 2.5) * 0.5 + 0.5;
+                    const intensity2 = Math.sin(glitchData.glitchTime * 1.7) * 0.5 + 0.5;
+                    const intensity3 = Math.sin(glitchData.glitchTime * 3.2) * 0.5 + 0.5;
+                    glitchData.glitchIntensity = (intensity1 + intensity2 + intensity3) / 3;
+
+                    // Update font size responsively
+                    if (glitchData.getResponsiveFontSize) {
+                        const newFontSize = glitchData.getResponsiveFontSize();
+                        screenErrorTextSprite.style.fontSize = newFontSize;
+                    }
+
+                    // MORE INTENSE position offset for glitch effect
+                    const baseJitter = 35; // Increased from 25
+                    const glitchOffsetX = (Math.random() - 0.5) * baseJitter * glitchData.glitchIntensity;
+                    const glitchOffsetY = (Math.random() - 0.5) * baseJitter * glitchData.glitchIntensity;
+                    
+                    // Add horizontal scan line effect (periodic horizontal shift)
+                    const scanLineOffset = Math.sin(glitchData.glitchTime * 8) * 15 * glitchData.glitchIntensity;
+                    
+                    // Apply combined glitch offset (relative to screen sprite center)
+                    screenErrorTextSprite.x = glitchOffsetX + scanLineOffset;
+                    screenErrorTextSprite.y = glitchOffsetY;
+
+                    // ENHANCED color shift with more variations (RGB + CMY + White)
+                    const colorShift = Math.floor(Math.random() * 8);
+                    if (glitchData.glitchIntensity > 0.5) {
+                        // Strong glitch - change color with more options
+                        if (colorShift === 0) {
+                            screenErrorTextSprite.style.fill = 0xFF0000; // Red
+                        } else if (colorShift === 1) {
+                            screenErrorTextSprite.style.fill = 0x00FF00; // Green
+                        } else if (colorShift === 2) {
+                            screenErrorTextSprite.style.fill = 0x0000FF; // Blue
+                        } else if (colorShift === 3) {
+                            screenErrorTextSprite.style.fill = 0x00FFFF; // Cyan
+                        } else if (colorShift === 4) {
+                            screenErrorTextSprite.style.fill = 0xFF00FF; // Magenta
+                        } else if (colorShift === 5) {
+                            screenErrorTextSprite.style.fill = 0xFFFF00; // Yellow
+                        } else if (colorShift === 6) {
+                            screenErrorTextSprite.style.fill = 0xFFFFFF; // White (glitch flash)
+                        } else {
+                            screenErrorTextSprite.style.fill = 0xFF6600; // Orange
+                        }
+                    } else {
+                        // Normal state - red
+                        screenErrorTextSprite.style.fill = 0xFF0000;
+                    }
+
+                    // ENHANCED scale glitch (more variation)
+                    const baseScaleGlitch = 1 + (Math.random() - 0.5) * 0.25 * glitchData.glitchIntensity;
+                    // Add pulsing scale effect
+                    const pulseScale = 1 + Math.sin(glitchData.glitchTime * 5) * 0.1 * glitchData.glitchIntensity;
+                    const scaleGlitch = baseScaleGlitch * pulseScale;
+                    screenErrorTextSprite.scale.set(scaleGlitch);
+
+                    // ENHANCED rotation glitch (more variation)
+                    const baseRotation = (Math.random() - 0.5) * 0.25 * glitchData.glitchIntensity;
+                    // Add wobble rotation
+                    const wobbleRotation = Math.sin(glitchData.glitchTime * 4) * 0.1 * glitchData.glitchIntensity;
+                    const rotationGlitch = baseRotation + wobbleRotation;
+                    screenErrorTextSprite.rotation = rotationGlitch;
+
+                    // ENHANCED alpha flicker with more patterns
+                    const flickerChance = glitchData.glitchIntensity > 0.7 ? 0.5 : 0.3;
+                    if (Math.random() < flickerChance) {
+                        // More varied flicker intensities
+                        const flickerIntensity = Math.random();
+                        if (flickerIntensity > 0.7) {
+                            screenErrorTextSprite.alpha = 0.2; // Strong flicker
+                        } else if (flickerIntensity > 0.4) {
+                            screenErrorTextSprite.alpha = 0.6; // Medium flicker
+                        } else {
+                            screenErrorTextSprite.alpha = 0.9; // Light flicker
+                        }
+                    } else {
+                        screenErrorTextSprite.alpha = 1.0; // Normal
+                    }
+
+                    // ADDITIONAL: Drop shadow glitch effect
+                    if (glitchData.glitchIntensity > 0.6) {
+                        const shadowOffset = Math.random() * 10 * glitchData.glitchIntensity;
+                        const shadowColor = Math.random() > 0.5 ? 0x00FF00 : 0x0000FF; // Green or Blue shadow
+                        screenErrorTextSprite.style.dropShadowDistance = 4 + shadowOffset;
+                        screenErrorTextSprite.style.dropShadowColor = shadowColor;
+                    } else {
+                        screenErrorTextSprite.style.dropShadowDistance = 4;
+                        screenErrorTextSprite.style.dropShadowColor = 0x000000;
+                    }
+
+                    // ADDITIONAL: Stroke thickness glitch
+                    const strokeGlitch = 6 + (Math.random() - 0.5) * 4 * glitchData.glitchIntensity;
+                    screenErrorTextSprite.style.strokeThickness = Math.max(2, strokeGlitch);
+                });
+            };
+
+            // Start glitch animation
+            startScreenGlitchAnimation();
+
+            // Update font size on window resize
+            window.addEventListener('resize', () => {
+                if (screenErrorTextSprite && screenErrorTextSprite.userData && screenErrorTextSprite.userData.getResponsiveFontSize) {
+                    const newFontSize = screenErrorTextSprite.userData.getResponsiveFontSize();
+                    screenErrorTextSprite.style.fontSize = newFontSize;
+                }
+            });
+
+            console.log('Screen sprite and 404 error animation added successfully');
+
+        } catch (error) {
+            console.error('Error loading Screen texture:', error);
         }
 
         // Load lights_off.png with swinging animation
