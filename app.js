@@ -380,6 +380,68 @@
         // Also try after a short delay (some browsers need this)
         setTimeout(attemptAutoplay, 500);
         setTimeout(attemptAutoplay, 1000);
+        
+        // Aggressive audio unlock: detect ANY user interaction to unlock audio
+        // This includes mouse movement, touch, keypress, etc.
+        let audioUnlocked = false;
+        const unlockAudioOnInteraction = () => {
+            if (audioUnlocked) return;
+            
+            // Unlock audio on first interaction
+            if (bgMusic && bgMusic.muted && isPlaying) {
+                bgMusic.muted = false;
+                userInteracted = true;
+                updateIcon();
+                console.log('Audio unlocked via user interaction (mouse/touch/key)');
+            } else if (bgMusic && !isPlaying) {
+                // Try to start playing if not already playing
+                bgMusic.muted = false;
+                bgMusic.play().then(() => {
+                    isPlaying = true;
+                    userInteracted = true;
+                    hasEverPlayed = true;
+                    updateIcon();
+                    console.log('Audio started and unlocked via user interaction');
+                }).catch((err) => {
+                    console.log('Could not start audio:', err);
+                });
+            }
+            
+            audioUnlocked = true;
+            // Remove all listeners after first unlock
+            document.removeEventListener('mousemove', unlockAudioOnInteraction);
+            document.removeEventListener('mousedown', unlockAudioOnInteraction);
+            document.removeEventListener('mouseup', unlockAudioOnInteraction);
+            document.removeEventListener('touchstart', unlockAudioOnInteraction);
+            document.removeEventListener('touchend', unlockAudioOnInteraction);
+            document.removeEventListener('touchmove', unlockAudioOnInteraction);
+            document.removeEventListener('touchcancel', unlockAudioOnInteraction);
+            document.removeEventListener('keydown', unlockAudioOnInteraction);
+            document.removeEventListener('keyup', unlockAudioOnInteraction);
+            document.removeEventListener('pointerdown', unlockAudioOnInteraction);
+            document.removeEventListener('pointermove', unlockAudioOnInteraction);
+            window.removeEventListener('touchstart', unlockAudioOnInteraction);
+            window.removeEventListener('touchmove', unlockAudioOnInteraction);
+        };
+        
+        // Listen for ANY user interaction to unlock audio
+        // Mouse movement counts as interaction on some browsers
+        // For mobile: touchstart and touchmove are critical
+        const options = { once: true, passive: true };
+        document.addEventListener('mousemove', unlockAudioOnInteraction, options);
+        document.addEventListener('mousedown', unlockAudioOnInteraction, { once: true });
+        document.addEventListener('mouseup', unlockAudioOnInteraction, { once: true });
+        document.addEventListener('touchstart', unlockAudioOnInteraction, options);
+        document.addEventListener('touchend', unlockAudioOnInteraction, options);
+        document.addEventListener('touchmove', unlockAudioOnInteraction, options);
+        document.addEventListener('touchcancel', unlockAudioOnInteraction, options);
+        document.addEventListener('keydown', unlockAudioOnInteraction, { once: true });
+        document.addEventListener('keyup', unlockAudioOnInteraction, { once: true });
+        document.addEventListener('pointerdown', unlockAudioOnInteraction, options);
+        document.addEventListener('pointermove', unlockAudioOnInteraction, options);
+        // Also listen on window for mobile touch events
+        window.addEventListener('touchstart', unlockAudioOnInteraction, options);
+        window.addEventListener('touchmove', unlockAudioOnInteraction, options);
 
         // Handle audio errors
         bgMusic.addEventListener('error', (e) => {
@@ -791,15 +853,29 @@
     // Create loading screen with flashlight effect
     async function createLoadingScreen() {
         try {
+            // Hide immediate HTML loading screen once PIXI loading screen is ready
+            const immediateLoadingScreen = document.getElementById('immediate-loading-screen');
+            if (immediateLoadingScreen) {
+                immediateLoadingScreen.classList.add('hidden');
+                // Remove after transition
+                setTimeout(() => {
+                    if (immediateLoadingScreen.parentNode) {
+                        immediateLoadingScreen.parentNode.removeChild(immediateLoadingScreen);
+                    }
+                }, 300);
+            }
+            
             // Hide header logo during loading screen
             const mainLogo = document.getElementById('main-logo');
             const headerLogoContainer = document.getElementById('logo-container');
             if (mainLogo) mainLogo.style.display = 'none';
             if (headerLogoContainer) headerLogoContainer.style.display = 'none';
 
-            // Load loading screen logo and flashlight image
-            const logoTexture = await Assets.load('assets/loading_screen_logo.png');
-            const flashlightTexture = await Assets.load('assets/flashlight.png');
+            // Load loading screen logo and flashlight image (preload in parallel for speed)
+            const [logoTexture, flashlightTexture] = await Promise.all([
+                Assets.load('assets/loading_screen_logo.png'),
+                Assets.load('assets/flashlight.png')
+            ]);
 
             // Create loading screen container
             loadingScreen = new Container();
@@ -6545,7 +6621,7 @@
                     }
                     
                     // Play mutator sound if not already playing and global audio is not muted
-                    if (mutatorDotSound && !isMutatorSoundPlaying && !isGlobalAudioMuted()) {
+                    if (mutatorDotSound && !isMutatorSoundPlaying) {
                         mutatorDotSound.play().catch((error) => {
                             console.error('Error playing mutator dot sound:', error);
                         });
@@ -6630,7 +6706,7 @@
                     }
                     
                     // Play mutator sound if not already playing and global audio is not muted
-                    if (mutatorDotSound && !isMutatorSoundPlaying && !isGlobalAudioMuted()) {
+                    if (mutatorDotSound && !isMutatorSoundPlaying) {
                         mutatorDotSound.play().catch((error) => {
                             console.error('Error playing mutator dot sound:', error);
                         });
@@ -6869,8 +6945,9 @@
                 cupSprite.userData.isOverCup = true;
                 console.log('Pointer entered cup - starting hop animation');
 
-                // Play cup move sound effect (only if global audio is not muted)
-                if (cupMoveSound && !isGlobalAudioMuted()) {
+                // Play cup move sound effect
+                // Play regardless of bg music mute state (sounds start unmuted)
+                if (cupMoveSound) {
                     // Reset to start and play
                     cupMoveSound.currentTime = 0;
                     cupMoveSound.play().catch((error) => {
@@ -7221,9 +7298,10 @@
                 // Start glitch effect (TV turning off/on repeatedly)
                 glitchSprite.userData.glitchTime = 0;
                 
-                // Play glitch sound effect (only if global audio is not muted)
+                // Play glitch sound effect
                 // Sound will loop continuously while hovering
-                if (glitchSpriteGlitchSound && !isGlobalAudioMuted()) {
+                // Play regardless of bg music mute state (sounds start unmuted)
+                if (glitchSpriteGlitchSound) {
                     // Only reset if not already playing to avoid interrupting the loop
                     if (glitchSpriteGlitchSound.paused) {
                         glitchSpriteGlitchSound.currentTime = 0;
@@ -8463,7 +8541,8 @@
                 
                 // Play glitch sound effect (only if global audio is not muted)
                 // Sound will loop continuously while hovering
-                if (discordGlitchSound && !isGlobalAudioMuted()) {
+                // Play regardless of bg music mute state (sounds start unmuted)
+                if (discordGlitchSound) {
                     // Only reset if not already playing to avoid interrupting the loop
                     if (discordGlitchSound.paused) {
                         discordGlitchSound.currentTime = 0;
@@ -8632,7 +8711,8 @@
                 
                 // Play glitch sound effect (only if global audio is not muted)
                 // Sound will loop continuously while hovering
-                if (promoGlitchSound && !isGlobalAudioMuted()) {
+                // Play regardless of bg music mute state (sounds start unmuted)
+                if (promoGlitchSound) {
                     // Only reset if not already playing to avoid interrupting the loop
                     if (promoGlitchSound.paused) {
                         promoGlitchSound.currentTime = 0;
@@ -8792,7 +8872,8 @@
                 
                 // Play glitch sound effect (only if global audio is not muted)
                 // Sound will loop continuously while hovering
-                if (telegramGlitchSound && !isGlobalAudioMuted()) {
+                // Play regardless of bg music mute state (sounds start unmuted)
+                if (telegramGlitchSound) {
                     // Only reset if not already playing to avoid interrupting the loop
                     if (telegramGlitchSound.paused) {
                         telegramGlitchSound.currentTime = 0;
@@ -9739,8 +9820,9 @@
                 }
                 playWallArtHoverAnimation();
                 
-                // Play paper flip sound effect (only if global audio is not muted)
-                if (wallArtPaperFlipSound && !isGlobalAudioMuted()) {
+                // Play paper flip sound effect
+                // Play regardless of bg music mute state (sounds start unmuted)
+                if (wallArtPaperFlipSound) {
                     // Reset to start and play (allows replaying if hovered multiple times)
                     wallArtPaperFlipSound.currentTime = 0;
                     wallArtPaperFlipSound.play().catch((error) => {
@@ -11292,8 +11374,9 @@
                 
                 bookSprite.userData.isOverBook = true;
                 
-                // Play book move sound effect (only if global audio is not muted)
-                if (bookMoveSound && !isGlobalAudioMuted()) {
+                // Play book move sound effect
+                // Play regardless of bg music mute state (sounds start unmuted)
+                if (bookMoveSound) {
                     // Reset to start and play
                     bookMoveSound.currentTime = 0;
                     bookMoveSound.play().catch((error) => {
