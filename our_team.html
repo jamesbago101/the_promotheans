@@ -2086,13 +2086,26 @@
         function unlockAudio() {
             if (!isAudioUnlocked && teamCardPaperFlipSound) {
                 // Play and immediately pause to unlock audio
-                teamCardPaperFlipSound.play().then(() => {
-                    teamCardPaperFlipSound.pause();
-                    teamCardPaperFlipSound.currentTime = 0;
-                    isAudioUnlocked = true;
-                }).catch(() => {
-                    // Ignore errors - audio will unlock on next interaction
-                });
+                const playPromise = teamCardPaperFlipSound.play();
+                if (playPromise !== undefined) {
+                    playPromise.then(() => {
+                        teamCardPaperFlipSound.pause();
+                        teamCardPaperFlipSound.currentTime = 0;
+                        isAudioUnlocked = true;
+                    }).catch(() => {
+                        // Ignore errors - audio will unlock on next interaction
+                    });
+                } else {
+                    // Some browsers return undefined, try direct play
+                    try {
+                        teamCardPaperFlipSound.play();
+                        teamCardPaperFlipSound.pause();
+                        teamCardPaperFlipSound.currentTime = 0;
+                        isAudioUnlocked = true;
+                    } catch (e) {
+                        // Ignore
+                    }
+                }
             }
         }
         
@@ -2102,22 +2115,65 @@
             unlockAudio();
         };
         
-        // Try to unlock on various interactions
-        document.addEventListener('mousedown', unlockOnInteraction, { once: true });
-        document.addEventListener('mouseup', unlockOnInteraction, { once: true });
-        document.addEventListener('click', unlockOnInteraction, { once: true });
-        document.addEventListener('touchstart', unlockOnInteraction, { once: true });
-        document.addEventListener('touchend', unlockOnInteraction, { once: true });
-        document.addEventListener('keydown', unlockOnInteraction, { once: true });
+        // Try to unlock on various interactions - use capture phase to catch early
+        document.addEventListener('mousedown', unlockOnInteraction, { once: true, capture: true });
+        document.addEventListener('mouseup', unlockOnInteraction, { once: true, capture: true });
+        document.addEventListener('click', unlockOnInteraction, { once: true, capture: true });
+        document.addEventListener('touchstart', unlockOnInteraction, { once: true, capture: true });
+        document.addEventListener('touchend', unlockOnInteraction, { once: true, capture: true });
+        document.addEventListener('keydown', unlockOnInteraction, { once: true, capture: true });
+        
+        // Also unlock on pointerdown (works for both mouse and touch)
+        document.addEventListener('pointerdown', unlockOnInteraction, { once: true, capture: true });
         
         // Also try on first mouse movement (some browsers allow this)
+        // Use capture phase and make it more aggressive
         let mouseMoveAttempted = false;
         document.addEventListener('mousemove', () => {
-            if (!mouseMoveAttempted) {
+            if (!mouseMoveAttempted && !isAudioUnlocked) {
                 mouseMoveAttempted = true;
                 unlockAudio();
             }
-        }, { once: true });
+        }, { once: true, capture: true, passive: true });
+        
+        // Also try on pointermove (works for both mouse and touch)
+        let pointerMoveAttempted = false;
+        document.addEventListener('pointermove', () => {
+            if (!pointerMoveAttempted && !isAudioUnlocked) {
+                pointerMoveAttempted = true;
+                unlockAudio();
+            }
+        }, { once: true, capture: true, passive: true });
+        
+        // Try to unlock audio once page is fully loaded and interactive
+        // This helps unlock audio before first hover
+        window.addEventListener('load', () => {
+            // Wait a bit for everything to be ready
+            setTimeout(() => {
+                if (!isAudioUnlocked && teamCardPaperFlipSound) {
+                    // Try to unlock by playing and pausing silently
+                    teamCardPaperFlipSound.play().then(() => {
+                        teamCardPaperFlipSound.pause();
+                        teamCardPaperFlipSound.currentTime = 0;
+                        isAudioUnlocked = true;
+                    }).catch(() => {
+                        // Will unlock on first user interaction
+                    });
+                }
+            }, 500);
+        });
+        
+        // Also try on DOMContentLoaded for faster unlock
+        document.addEventListener('DOMContentLoaded', () => {
+            // Try to unlock on first pointer/mouse movement anywhere
+            const unlockOnFirstMove = () => {
+                if (!isAudioUnlocked && teamCardPaperFlipSound) {
+                    unlockAudio();
+                }
+            };
+            document.addEventListener('pointermove', unlockOnFirstMove, { once: true, passive: true });
+            document.addEventListener('mousemove', unlockOnFirstMove, { once: true, passive: true });
+        });
         
         // Wait for all images to load before positioning
         // Map card IDs to team_card IDs
@@ -2139,7 +2195,15 @@
             card.style.visibility = 'visible';
             
             // Unlock audio when user interacts with card (mousedown counts as user interaction)
+            // This happens before mouseenter, so audio will be ready for hover
             card.addEventListener('mousedown', function() {
+                if (teamCardPaperFlipSound && !isAudioUnlocked) {
+                    unlockAudio();
+                }
+            });
+            
+            // Also unlock on pointerdown (works for both mouse and touch)
+            card.addEventListener('pointerdown', function() {
                 if (teamCardPaperFlipSound && !isAudioUnlocked) {
                     unlockAudio();
                 }
@@ -2153,7 +2217,7 @@
             });
             
             // Add hover effect that scales while preserving rotation
-            card.addEventListener('mouseenter', function() {
+            card.addEventListener('mouseenter', async function() {
                 this.style.transform = `${this.dataset.originalTransform} scale(1.1)`;
                 
                 // Play paper flip sound on hover
@@ -2165,32 +2229,37 @@
                             // Ignore errors
                         });
                     } else {
-                        // Audio not unlocked yet - try to unlock and play
-                        // First attempt: try to unlock by playing and pausing
-                        teamCardPaperFlipSound.play().then(() => {
-                            // Success! Audio is now unlocked
+                        // Audio not unlocked yet - try to unlock and play immediately
+                        // Try to unlock by playing (mouseenter might be considered interaction in some cases)
+                        try {
+                            await teamCardPaperFlipSound.play();
+                            // Success! Audio is unlocked
                             teamCardPaperFlipSound.pause();
                             teamCardPaperFlipSound.currentTime = 0;
                             isAudioUnlocked = true;
                             // Now play for real
-                            teamCardPaperFlipSound.play().catch(() => {
-                                // Ignore
-                            });
-                        }).catch(() => {
-                            // First attempt failed - browser blocked it
-                            // Try a second time (sometimes browsers need a retry)
-                            setTimeout(() => {
-                                if (teamCardPaperFlipSound) {
-                                    teamCardPaperFlipSound.play().then(() => {
-                                        isAudioUnlocked = true;
-                                    }).catch(() => {
-                                        // Still blocked - will need click to unlock
-                                        // This is a browser security restriction we can't bypass
-                                    });
-                                }
-                            }, 50);
-                        });
+                            teamCardPaperFlipSound.currentTime = 0;
+                            await teamCardPaperFlipSound.play();
+                        } catch (error) {
+                            // mouseenter alone might not work, try unlocking via the unlock function
+                            unlockAudio();
+                            // Wait a moment for unlock to complete
+                            await new Promise(resolve => setTimeout(resolve, 100));
+                            if (isAudioUnlocked && teamCardPaperFlipSound) {
+                                teamCardPaperFlipSound.currentTime = 0;
+                                teamCardPaperFlipSound.play().catch(() => {
+                                    // Ignore errors
+                                });
+                            }
+                        }
                     }
+                }
+            });
+            
+            // Also unlock on pointerenter (works for both mouse and touch)
+            card.addEventListener('pointerenter', function() {
+                if (teamCardPaperFlipSound && !isAudioUnlocked) {
+                    unlockAudio();
                 }
             });
             
