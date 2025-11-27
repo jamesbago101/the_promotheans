@@ -132,6 +132,131 @@
     container.appendChild(app.canvas);
     console.log('PixiJS Application initialized successfully');
 
+    // Background sprite and texture dimensions - Declare early to avoid TDZ errors
+    let backgroundSprite;
+    let mutatorBgSprite;
+    let mutatorCapsuleSprite;
+    let mutatorCapsuleStrokeSprite; // Stroke overlay for hover effect
+    let mutatorCapsuleDot; // Pulsing dot at center
+    let mutatorCapsuleCircleText; // Circle with "click to explore" text
+    let mutatorCapsuleTextSprite; // Text "MUTATOR" that appears on mutator capsule hover
+    let mutatorCapsuleLabelText; // Simple label text for mobile/tablet (just "Mutator")
+    let cupSprite;
+    let glitchSprite;
+    let eyeLogoSprite;
+    let cctvSprite;
+    let cctvTextSprite; // Text "X Account" that appears on CCTV hover
+    let cctvDot; // Pulsing dot at center of CCTV
+    let cctvCircleText; // Circle with "click to explore" text
+    let discordSprite; // Discord animated sprite (discord1.png to discord8.png)
+    let discordGlitchSound; // Audio for discord glitch effect
+    let promoGlitchSound; // Audio for promo glitch effect
+    let telegramGlitchSound; // Audio for telegram glitch effect
+    let glitchSpriteGlitchSound; // Audio for glitch sprite glitch effect
+    let wallArtPaperFlipSound; // Audio for wall art paper flip effect
+    let lightSwitchSound; // Audio for light switch effect
+    let bookMoveSound; // Audio for book move effect
+    let cupMoveSound; // Audio for cup move effect
+    let mutatorDotSound; // Audio for mutator dot hover effect
+    let promoSprite; // Promo animated sprite (promo1.png to promo10.png)
+    let telegramSprite; // Telegram animated sprite (telegram1.png to telegram9.png)
+    let cctvStrokeSprite; // Animated stroke overlay for hover effect (cctv1_stroke.png to cctv3_stroke.png)
+    let cctvLabelText; // Simple label text for mobile/tablet (just "X Account")
+    let wallArtSprite; // Animated wall art sprite (wall_art1.png to wall_art6.png)
+    let wallArtDot; // Pulsing dot at center of wall art
+    let blaisedSprite; // Animated blaised sprite (blaised1.png to blaised6.png)
+    let blaisedAuraSprite; // Animated blaised aura sprite (blaised1_aura.png to blaised6_aura.png) with color dodge blending
+    let blaisedAuraApp; // Separate PIXI application for aura sprite with CSS mix-blend-mode
+    let blaisedAction2Sprite; // Animated blaised action2 sprite (blaised_action2_1.png, blaised_action2_2.png)
+    let blaisedAction2AuraSprite; // Animated blaised action2 aura sprite with color dodge blending
+    let blaisedAction2AuraApp; // Separate PIXI application for action2 aura sprite
+    let blaisedAction3Sprite; // Animated blaised action3 sprite (blaised_action3_1.png)
+    let blaisedAction3AuraSprite; // Animated blaised action3 aura sprite with color dodge blending
+    let blaisedAction3AuraApp; // Separate PIXI application for action3 aura sprite
+    let wallArtTextSprite; // Text "OUR TEAM" that appears on wall art hover
+    let wallArtLabelText; // Simple label text for mobile/tablet (just "OUR TEAM")
+    let wallArtStrokeSprite; // Animated stroke overlay for hover effect (wall_art1_stroke.png to wall_art6_stroke.png)
+    let wallArtCircleText; // Circle with "click to explore" text
+    let bookSprite; // Book sprite (book.png)
+    let bookDot; // Pulsing dot at center of book
+    let bookTextSprite; // Text "Community" that appears on book hover
+    let bookLabelText; // Simple label text for mobile/tablet (just "Community")
+    let bookStrokeSprite; // Stroke overlay for hover effect (book_stroke.png)
+    let bookCircleText; // Circle with "click to explore" text
+    let lightsOffSprite; // Lights off sprite with swinging animation
+    let lightsSwitchSprite; // Lights switch sprite with swinging animation
+    let lightsOffTexture; // Lights off texture (for toggling)
+    let lightsOnTexture; // Lights on texture (for toggling)
+    let lightsRaySprite; // Lights ray sprite with color dodge blending
+    let lightsRayApp; // Separate PIXI application for lights ray with CSS mix-blend-mode
+    let imageWidth = 1920;
+    let imageHeight = 1080;
+
+    // Panning/dragging state
+    let isDragging = false;
+    let dragStart = { x: 0, y: 0 };
+    let advanceWallArtFrame = null; // Function to advance wall art animation frame
+    let stopWallArtAnimation = null; // Function to stop wall art animation
+    let spriteStart = { x: 0, y: 0 };
+    let currentScale = 1;
+    let wallArtLastPanPosition = { x: 0, y: 0 }; // Track last pan position for wall art animation
+    let wallArtPanThreshold = 30; // Minimum pixels to pan before triggering frame change
+    let wallArtAnimationTimeout = null; // Timeout to stop animation when movement stops
+    let wallArtIsAnimating = false; // Track if wall art animation is currently playing
+
+    // Helper function to check if global audio is muted
+    // Returns true only if user has interacted and explicitly muted, not for autoplay mute
+    function isGlobalAudioMuted() {
+        const bgMusic = document.getElementById('bg-music');
+        if (!bgMusic) return false;
+        
+        // Check if user has interacted (music has been played or user clicked audio control)
+        // If bg music is muted but hasn't been interacted with, it's muted for autoplay
+        // In that case, don't mute sound effects
+        const hasUserInteracted = bgMusic.currentTime > 0 || !bgMusic.paused || 
+                                  (bgMusic.readyState > 0 && bgMusic.readyState < 3);
+        
+        // Only respect mute state if user has interacted
+        // If muted for autoplay (no interaction), return false so sound effects can play
+        if (!hasUserInteracted && bgMusic.muted) {
+            return false; // Don't mute sound effects if bg music is muted for autoplay
+        }
+        
+        return bgMusic.muted;
+    }
+    
+    // Function to sync all glitch sounds with global mute state
+    function syncGlitchSoundsMuteState() {
+        const isMuted = isGlobalAudioMuted();
+        if (discordGlitchSound) {
+            discordGlitchSound.muted = isMuted;
+        }
+        if (promoGlitchSound) {
+            promoGlitchSound.muted = isMuted;
+        }
+        if (telegramGlitchSound) {
+            telegramGlitchSound.muted = isMuted;
+        }
+        if (glitchSpriteGlitchSound) {
+            glitchSpriteGlitchSound.muted = isMuted;
+        }
+        if (wallArtPaperFlipSound) {
+            wallArtPaperFlipSound.muted = isMuted;
+        }
+        if (lightSwitchSound) {
+            lightSwitchSound.muted = isMuted;
+        }
+        if (bookMoveSound) {
+            bookMoveSound.muted = isMuted;
+        }
+        if (mutatorDotSound) {
+            mutatorDotSound.muted = isMuted;
+        }
+        if (cupMoveSound) {
+            cupMoveSound.muted = isMuted;
+        }
+    }
+
     // Initialize background music and audio control
     // Wait a bit to ensure DOM is ready
     setTimeout(() => {
@@ -866,6 +991,50 @@
     let loadingScreenAlpha = 1;
     let flashCount = 0; // Track how many times we've flashed the logo (accessible globally)
     let loadingScreenResizeHandler = null; // Store resize handler reference for cleanup
+    
+    // Progress bar variables
+    let progressBarContainer;
+    let progressBarBg;
+    let progressBarFill;
+    let assetLoadingProgress = 0; // 0 to 1
+    let totalAssetsToLoad = 0;
+    let loadedAssetsCount = 0;
+    let progressBarWidth = 0; // Store for resize
+
+    // Function to update progress bar
+    function updateProgressBar(progress) {
+        if (!progressBarFill || !progressBarContainer) return;
+        
+        assetLoadingProgress = Math.min(1, Math.max(0, progress));
+        
+        // Calculate current width based on progress
+        const currentWidth = progressBarWidth * assetLoadingProgress;
+        
+        // Update progress bar fill
+        progressBarFill.clear();
+        if (currentWidth > 0) {
+            progressBarFill.roundRect(-progressBarWidth / 2, -2, currentWidth, 4, 2);
+            progressBarFill.fill({ color: 0xFFFFFF, alpha: 0.9 });
+        }
+    }
+
+    // Wrapper for Assets.load that tracks progress
+    async function loadAssetWithProgress(url) {
+        try {
+            const texture = await Assets.load(url);
+            loadedAssetsCount++;
+            const progress = totalAssetsToLoad > 0 ? loadedAssetsCount / totalAssetsToLoad : 0;
+            updateProgressBar(progress);
+            return texture;
+        } catch (error) {
+            console.error(`Failed to load asset: ${url}`, error);
+            // Still increment count to avoid progress getting stuck
+            loadedAssetsCount++;
+            const progress = totalAssetsToLoad > 0 ? loadedAssetsCount / totalAssetsToLoad : 0;
+            updateProgressBar(progress);
+            throw error;
+        }
+    }
 
     // Create loading screen with flashlight effect
     async function createLoadingScreen() {
@@ -1001,10 +1170,35 @@
             loadingScreen.addChild(flashlightCircle);
             loadingScreen.addChild(logoContainer);
 
+            // Create progress bar below the logo
+            progressBarWidth = logoDisplayWidth * 0.8; // 80% of logo width
+            const progressBarHeight = 4; // Thin progress bar
+            const progressBarY = logoSprite.y + logoDisplayHeight / 2 + 40; // Position below logo
+
+            // Progress bar container
+            progressBarContainer = new Container();
+            progressBarContainer.x = app.screen.width / 2;
+            progressBarContainer.y = progressBarY;
+
+            // Progress bar background (gray)
+            progressBarBg = new Graphics();
+            progressBarBg.roundRect(-progressBarWidth / 2, -progressBarHeight / 2, progressBarWidth, progressBarHeight, 2);
+            progressBarBg.fill({ color: 0x333333, alpha: 0.5 }); // Semi-transparent dark gray
+            progressBarContainer.addChild(progressBarBg);
+
+            // Progress bar fill (white)
+            progressBarFill = new Graphics();
+            progressBarFill.roundRect(-progressBarWidth / 2, -progressBarHeight / 2, 0, progressBarHeight, 2);
+            progressBarFill.fill({ color: 0xFFFFFF, alpha: 0.9 }); // White with slight transparency
+            progressBarContainer.addChild(progressBarFill);
+
+            loadingScreen.addChild(progressBarContainer);
+
             console.log('Loading screen created:', {
                 logoPos: { x: logoSprite.x, y: logoSprite.y },
                 flashlightRadius: flashlightRadius,
-                logoContainerPos: { x: logoContainer.x, y: logoContainer.y }
+                logoContainerPos: { x: logoContainer.x, y: logoContainer.y },
+                progressBarY: progressBarY
             });
 
             app.stage.addChild(loadingScreen);
@@ -1158,6 +1352,31 @@
                     logoContainer.x = logoSprite.x;
                     logoContainer.y = logoSprite.y;
 
+                    // Update progress bar position and size
+                    if (progressBarContainer && !progressBarContainer.destroyed) {
+                        progressBarWidth = newLogoDisplayWidth * 0.8; // 80% of logo width
+                        const progressBarY = logoSprite.y + newLogoDisplayHeight / 2 + 40;
+                        progressBarContainer.x = app.screen.width / 2;
+                        progressBarContainer.y = progressBarY;
+
+                        // Resize progress bar background
+                        if (progressBarBg && !progressBarBg.destroyed) {
+                            progressBarBg.clear();
+                            progressBarBg.roundRect(-progressBarWidth / 2, -2, progressBarWidth, 4, 2);
+                            progressBarBg.fill({ color: 0x333333, alpha: 0.5 });
+                        }
+
+                        // Resize progress bar fill (maintain current progress)
+                        if (progressBarFill && !progressBarFill.destroyed) {
+                            const currentWidth = progressBarWidth * assetLoadingProgress;
+                            progressBarFill.clear();
+                            if (currentWidth > 0) {
+                                progressBarFill.roundRect(-progressBarWidth / 2, -2, currentWidth, 4, 2);
+                                progressBarFill.fill({ color: 0xFFFFFF, alpha: 0.9 });
+                            }
+                        }
+                    }
+
                     // Update flashlight sprite size to match mask circle size
                     if (flashlightCircle && flashlightCircle instanceof Sprite) {
                         // Recalculate mask circle size based on new logo size
@@ -1203,6 +1422,9 @@
     // Function to fade out loading screen
     function fadeOutLoadingScreen() {
         if (!loadingScreen || !loadingScreen.parent) return;
+
+        // Ensure progress bar is at 100% before fading out
+        updateProgressBar(1.0);
 
         const fadeSpeed = 0.03;
         const fadeInterval = setInterval(() => {
@@ -2204,131 +2426,6 @@
     if (ENABLE_INTRO_LOADING_SCREEN) {
         await createLoadingScreen();
     }
-
-    // Background sprite and texture dimensions
-    let backgroundSprite;
-    let mutatorBgSprite;
-    let mutatorCapsuleSprite;
-    let mutatorCapsuleStrokeSprite; // Stroke overlay for hover effect
-    let mutatorCapsuleDot; // Pulsing dot at center
-    let mutatorCapsuleCircleText; // Circle with "click to explore" text
-    let mutatorCapsuleTextSprite; // Text "MUTATOR" that appears on mutator capsule hover
-    let mutatorCapsuleLabelText; // Simple label text for mobile/tablet (just "Mutator")
-    let cupSprite;
-    let glitchSprite;
-    let eyeLogoSprite;
-    let cctvSprite;
-    let cctvTextSprite; // Text "X Account" that appears on CCTV hover
-    let cctvDot; // Pulsing dot at center of CCTV
-    let cctvCircleText; // Circle with "click to explore" text
-    let discordSprite; // Discord animated sprite (discord1.png to discord8.png)
-    let discordGlitchSound; // Audio for discord glitch effect
-    let promoGlitchSound; // Audio for promo glitch effect
-    let telegramGlitchSound; // Audio for telegram glitch effect
-    let glitchSpriteGlitchSound; // Audio for glitch sprite glitch effect
-    let wallArtPaperFlipSound; // Audio for wall art paper flip effect
-    let lightSwitchSound; // Audio for light switch effect
-    let bookMoveSound; // Audio for book move effect
-    let cupMoveSound; // Audio for cup move effect
-    let mutatorDotSound; // Audio for mutator dot hover effect
-    
-    // Helper function to check if global audio is muted
-    // Returns true only if user has interacted and explicitly muted, not for autoplay mute
-    function isGlobalAudioMuted() {
-        const bgMusic = document.getElementById('bg-music');
-        if (!bgMusic) return false;
-        
-        // Check if user has interacted (music has been played or user clicked audio control)
-        // If bg music is muted but hasn't been interacted with, it's muted for autoplay
-        // In that case, don't mute sound effects
-        const hasUserInteracted = bgMusic.currentTime > 0 || !bgMusic.paused || 
-                                  (bgMusic.readyState > 0 && bgMusic.readyState < 3);
-        
-        // Only respect mute state if user has interacted
-        // If muted for autoplay (no interaction), return false so sound effects can play
-        if (!hasUserInteracted && bgMusic.muted) {
-            return false; // Don't mute sound effects if bg music is muted for autoplay
-        }
-        
-        return bgMusic.muted;
-    }
-    
-    // Function to sync all glitch sounds with global mute state
-    function syncGlitchSoundsMuteState() {
-        const isMuted = isGlobalAudioMuted();
-        if (discordGlitchSound) {
-            discordGlitchSound.muted = isMuted;
-        }
-        if (promoGlitchSound) {
-            promoGlitchSound.muted = isMuted;
-        }
-        if (telegramGlitchSound) {
-            telegramGlitchSound.muted = isMuted;
-        }
-        if (glitchSpriteGlitchSound) {
-            glitchSpriteGlitchSound.muted = isMuted;
-        }
-        if (wallArtPaperFlipSound) {
-            wallArtPaperFlipSound.muted = isMuted;
-        }
-        if (lightSwitchSound) {
-            lightSwitchSound.muted = isMuted;
-        }
-        if (bookMoveSound) {
-            bookMoveSound.muted = isMuted;
-        }
-        if (mutatorDotSound) {
-            mutatorDotSound.muted = isMuted;
-        }
-        if (cupMoveSound) {
-            cupMoveSound.muted = isMuted;
-        }
-    }
-    let promoSprite; // Promo animated sprite (promo1.png to promo10.png)
-    let telegramSprite; // Telegram animated sprite (telegram1.png to telegram9.png)
-    let cctvStrokeSprite; // Animated stroke overlay for hover effect (cctv1_stroke.png to cctv3_stroke.png)
-    let cctvLabelText; // Simple label text for mobile/tablet (just "X Account")
-    let wallArtSprite; // Animated wall art sprite (wall_art1.png to wall_art6.png)
-    let wallArtDot; // Pulsing dot at center of wall art
-    let blaisedSprite; // Animated blaised sprite (blaised1.png to blaised6.png)
-    let blaisedAuraSprite; // Animated blaised aura sprite (blaised1_aura.png to blaised6_aura.png) with color dodge blending
-    let blaisedAuraApp; // Separate PIXI application for aura sprite with CSS mix-blend-mode
-    let blaisedAction2Sprite; // Animated blaised action2 sprite (blaised_action2_1.png, blaised_action2_2.png)
-    let blaisedAction2AuraSprite; // Animated blaised action2 aura sprite with color dodge blending
-    let blaisedAction2AuraApp; // Separate PIXI application for action2 aura sprite
-    let blaisedAction3Sprite; // Animated blaised action3 sprite (blaised_action3_1.png)
-    let blaisedAction3AuraSprite; // Animated blaised action3 aura sprite with color dodge blending
-    let blaisedAction3AuraApp; // Separate PIXI application for action3 aura sprite
-    let wallArtTextSprite; // Text "OUR TEAM" that appears on wall art hover
-    let wallArtLabelText; // Simple label text for mobile/tablet (just "OUR TEAM")
-    let wallArtStrokeSprite; // Animated stroke overlay for hover effect (wall_art1_stroke.png to wall_art6_stroke.png)
-    let wallArtCircleText; // Circle with "click to explore" text
-    let bookSprite; // Book sprite (book.png)
-    let bookDot; // Pulsing dot at center of book
-    let bookTextSprite; // Text "Community" that appears on book hover
-    let bookLabelText; // Simple label text for mobile/tablet (just "Community")
-    let bookStrokeSprite; // Stroke overlay for hover effect (book_stroke.png)
-    let bookCircleText; // Circle with "click to explore" text
-    let lightsOffSprite; // Lights off sprite with swinging animation
-    let lightsSwitchSprite; // Lights switch sprite with swinging animation
-    let lightsOffTexture; // Lights off texture (for toggling)
-    let lightsOnTexture; // Lights on texture (for toggling)
-    let lightsRaySprite; // Lights ray sprite with color dodge blending
-    let lightsRayApp; // Separate PIXI application for lights ray with CSS mix-blend-mode
-    let imageWidth = 1920;
-    let imageHeight = 1080;
-
-    // Panning/dragging state
-    let isDragging = false;
-    let dragStart = { x: 0, y: 0 };
-    let advanceWallArtFrame = null; // Function to advance wall art animation frame
-    let stopWallArtAnimation = null; // Function to stop wall art animation
-    let spriteStart = { x: 0, y: 0 };
-    let currentScale = 1;
-    let wallArtLastPanPosition = { x: 0, y: 0 }; // Track last pan position for wall art animation
-    let wallArtPanThreshold = 30; // Minimum pixels to pan before triggering frame change
-    let wallArtAnimationTimeout = null; // Timeout to stop animation when movement stops
-    let wallArtIsAnimating = false; // Track if wall art animation is currently playing
 
     // Function to update mutator capsule text position, font size, and dot position
     function updateMutatorText() {
@@ -5699,6 +5796,27 @@
         app.canvas.style.cursor = 'grab';
     }
 
+    // Count total assets to load for progress tracking
+    // Background: 3 frames
+    // Mutator: 1 bg + 10 capsules + 1 stroke = 12
+    // Cup: 1
+    // Glitch: 6 frames
+    // Eye logo: 2 (open + closed)
+    // CCTV: 3 frames + 3 strokes = 6
+    // Discord: 8 frames
+    // Promo: 10 frames
+    // Telegram: 9 frames
+    // Blaised: 6 frames + 6 auras = 12
+    // Blaised action2: 2 frames + 2 auras = 4
+    // Blaised action3: 1 frame + 1 aura = 2
+    // Wall art: 6 frames + 6 strokes = 12
+    // Book: 1 + 1 stroke = 2
+    // Lights: 3 (off, switch, ray)
+    // Total: 3 + 12 + 1 + 6 + 2 + 6 + 8 + 10 + 9 + 12 + 4 + 2 + 12 + 2 + 3 = 102
+    totalAssetsToLoad = 102;
+    loadedAssetsCount = 0;
+    console.log(`Starting to load ${totalAssetsToLoad} assets...`);
+
     // Load the background textures using Assets API (bg1.png, bg2.png, bg3.png)
     try {
         console.log('Loading background frames...');
@@ -5706,7 +5824,7 @@
 
         // Load all 3 background frames (bg1.png, bg2.png, bg3.png)
         for (let i = 1; i <= 3; i++) {
-            const texture = await Assets.load(`assets/bg${i}.png`);
+            const texture = await loadAssetWithProgress(`assets/bg${i}.png`);
             backgroundTextures.push(texture);
             console.log(`  Loaded bg${i}.png:`, texture.width, 'x', texture.height);
         }
@@ -5745,7 +5863,7 @@
 
         try {
             // Load mutator background (static image with hue animation)
-            const mutatorBgTexture = await Assets.load('assets/mutator_bg.png');
+            const mutatorBgTexture = await loadAssetWithProgress('assets/mutator_bg.png');
             mutatorBgSprite = new Sprite(mutatorBgTexture);
             mutatorBgSprite.anchor.set(0.5);
 
@@ -5755,13 +5873,13 @@
             const mutatorCapsuleTextures = [];
 
             for (const texturePath of mutatorCapsuleTexturePaths) {
-                const texture = await Assets.load(texturePath);
+                const texture = await loadAssetWithProgress(texturePath);
                 mutatorCapsuleTextures.push(texture);
                 console.log(`  Loaded ${texturePath}:`, texture.width, 'x', texture.height);
             }
 
             // Load mutator capsule stroke overlay for hover effect
-            const mutatorCapsuleStrokeTexture = await Assets.load('assets/mutator_capsule_stroke.png');
+            const mutatorCapsuleStrokeTexture = await loadAssetWithProgress('assets/mutator_capsule_stroke.png');
             console.log('  Loaded mutator_capsule_stroke.png:', mutatorCapsuleStrokeTexture.width, 'x', mutatorCapsuleStrokeTexture.height);
 
             // Create AnimatedSprite from the capsule textures
@@ -6819,7 +6937,7 @@
 
         // Load cup.png and make it interactive (simple button approach - matching working example)
         try {
-            const cupTexture = await Assets.load('assets/cup.png');
+            const cupTexture = await loadAssetWithProgress('assets/cup.png');
 
             // Get cup's actual dimensions
             const cupImageWidth = cupTexture.orig?.width || cupTexture.width || cupTexture.baseTexture.width;
@@ -7121,7 +7239,7 @@
             // Load all 6 frames (0000 to 0005)
             for (let i = 0; i < 6; i++) {
                 const frameNum = i.toString().padStart(4, '0'); // Pad to 4 digits: 0000, 0001, etc.
-                const texture = await Assets.load(`assets/glitch${frameNum}.png`);
+                const texture = await loadAssetWithProgress(`assets/glitch${frameNum}.png`);
                 glitchTextures.push(texture);
             }
 
@@ -7505,8 +7623,8 @@
             console.log('Loading eye logo images...');
 
             // Load both eye textures
-            const eyeOpenTexture = await Assets.load('assets/eye_logo_open.png');
-            const eyeClosedTexture = await Assets.load('assets/eye_logo_closed.png');
+            const eyeOpenTexture = await loadAssetWithProgress('assets/eye_logo_open.png');
+            const eyeClosedTexture = await loadAssetWithProgress('assets/eye_logo_closed.png');
 
             console.log('  Loaded eye_logo_open.png:', eyeOpenTexture.width, 'x', eyeOpenTexture.height);
             console.log('  Loaded eye_logo_closed.png:', eyeClosedTexture.width, 'x', eyeClosedTexture.height);
@@ -7635,7 +7753,7 @@
 
             // Load all 3 frames (cctv1.png, cctv2.png, cctv3.png)
             for (let i = 1; i <= 3; i++) {
-                const texture = await Assets.load(`assets/cctv${i}.png`);
+                const texture = await loadAssetWithProgress(`assets/cctv${i}.png`);
                 cctvTextures.push(texture);
                 console.log(`  Loaded cctv${i}.png:`, texture.width, 'x', texture.height);
             }
@@ -7648,7 +7766,7 @@
 
             // Load all 3 stroke frames (cctv1_stroke.png, cctv2_stroke.png, cctv3_stroke.png)
             for (let i = 1; i <= 3; i++) {
-                const strokeTexture = await Assets.load(`assets/cctv${i}_stroke.png`);
+                const strokeTexture = await loadAssetWithProgress(`assets/cctv${i}_stroke.png`);
                 cctvStrokeTextures.push(strokeTexture);
                 console.log(`  Loaded cctv${i}_stroke.png:`, strokeTexture.width, 'x', strokeTexture.height);
             }
@@ -8435,7 +8553,7 @@
 
             // Load all 8 frames (discord1.png to discord8.png)
             for (let i = 1; i <= 8; i++) {
-                const texture = await Assets.load(`assets/discord${i}.png`);
+                const texture = await loadAssetWithProgress(`assets/discord${i}.png`);
                 discordTextures.push(texture);
                 console.log(`  Loaded discord${i}.png:`, texture.width, 'x', texture.height);
             }
@@ -8604,7 +8722,7 @@
 
             // Load all 10 frames (promo1.png to promo10.png)
             for (let i = 1; i <= 10; i++) {
-                const texture = await Assets.load(`assets/promo${i}.png`);
+                const texture = await loadAssetWithProgress(`assets/promo${i}.png`);
                 promoTextures.push(texture);
                 console.log(`  Loaded promo${i}.png:`, texture.width, 'x', texture.height);
             }
@@ -8765,7 +8883,7 @@
 
             // Load all 9 frames (telegram1.png to telegram9.png)
             for (let i = 1; i <= 9; i++) {
-                const texture = await Assets.load(`assets/telegram${i}.png`);
+                const texture = await loadAssetWithProgress(`assets/telegram${i}.png`);
                 telegramTextures.push(texture);
                 console.log(`  Loaded telegram${i}.png:`, texture.width, 'x', texture.height);
             }
@@ -8936,7 +9054,7 @@
 
             // Load all 6 frames (blaised1.png, blaised2.png, ..., blaised6.png)
             for (let i = 1; i <= 6; i++) {
-                const texture = await Assets.load(`assets/blaised${i}.png`);
+                const texture = await loadAssetWithProgress(`assets/blaised${i}.png`);
                 blaisedTextures.push(texture);
                 console.log(`  Loaded blaised${i}.png:`, texture.width, 'x', texture.height);
             }
@@ -9046,7 +9164,7 @@
 
             // Load all 6 frames (blaised1_aura.png, blaised2_aura.png, ..., blaised6_aura.png)
             for (let i = 1; i <= 6; i++) {
-                const texture = await Assets.load(`assets/blaised${i}_aura.png`);
+                const texture = await loadAssetWithProgress(`assets/blaised${i}_aura.png`);
                 blaisedAuraTextures.push(texture);
                 console.log(`  Loaded blaised${i}_aura.png:`, texture.width, 'x', texture.height);
             }
@@ -9185,7 +9303,7 @@
 
             // Load 2 frames
             for (let i = 1; i <= 2; i++) {
-                const texture = await Assets.load(`assets/blaised_action2_${i}.png`);
+                const texture = await loadAssetWithProgress(`assets/blaised_action2_${i}.png`);
                 blaisedAction2Textures.push(texture);
                 console.log(`  Loaded blaised_action2_${i}.png:`, texture.width, 'x', texture.height);
             }
@@ -9231,7 +9349,7 @@
 
             // Load 2 frames
             for (let i = 1; i <= 2; i++) {
-                const texture = await Assets.load(`assets/blaised_action2_${i}_aura.png`);
+                const texture = await loadAssetWithProgress(`assets/blaised_action2_${i}_aura.png`);
                 blaisedAction2AuraTextures.push(texture);
                 console.log(`  Loaded blaised_action2_${i}_aura.png:`, texture.width, 'x', texture.height);
             }
@@ -9305,7 +9423,7 @@
             const blaisedAction3Textures = [];
 
             // Load 1 frame
-            const texture = await Assets.load(`assets/blaised_action3_1.png`);
+            const texture = await loadAssetWithProgress(`assets/blaised_action3_1.png`);
             blaisedAction3Textures.push(texture);
             console.log(`  Loaded blaised_action3_1.png:`, texture.width, 'x', texture.height);
 
@@ -9394,7 +9512,7 @@
             const blaisedAction3AuraTextures = [];
 
             // Load 1 frame
-            const texture = await Assets.load(`assets/blaised_action3_1_aura.png`);
+            const texture = await loadAssetWithProgress(`assets/blaised_action3_1_aura.png`);
             blaisedAction3AuraTextures.push(texture);
             console.log(`  Loaded blaised_action3_1_aura.png:`, texture.width, 'x', texture.height);
 
@@ -9516,7 +9634,7 @@
 
             // Load all 6 frames (wall_art1.png, wall_art2.png, ..., wall_art6.png)
             for (let i = 1; i <= 6; i++) {
-                const texture = await Assets.load(`assets/wall_art${i}.png`);
+                const texture = await loadAssetWithProgress(`assets/wall_art${i}.png`);
                 wallArtTextures.push(texture);
                 console.log(`  Loaded wall_art${i}.png:`, texture.width, 'x', texture.height);
             }
@@ -9529,7 +9647,7 @@
 
             // Load all 6 stroke frames (wall_art1_stroke.png, wall_art2_stroke.png, ..., wall_art6_stroke.png)
             for (let i = 1; i <= 6; i++) {
-                const strokeTexture = await Assets.load(`assets/wall_art${i}_stroke.png`);
+                const strokeTexture = await loadAssetWithProgress(`assets/wall_art${i}_stroke.png`);
                 wallArtStrokeTextures.push(strokeTexture);
                 console.log(`  Loaded wall_art${i}_stroke.png:`, strokeTexture.width, 'x', strokeTexture.height);
             }
@@ -11476,7 +11594,7 @@
         // Load lights_off.png with swinging animation
         try {
             console.log('Loading lights_off.png...');
-            lightsOffTexture = await Assets.load('assets/lights_off.png'); // Store globally for toggling
+            lightsOffTexture = await loadAssetWithProgress('assets/lights_off.png'); // Store globally for toggling
 
             // Get lights_off actual dimensions
             const lightsOffImageWidth = lightsOffTexture.orig?.width || lightsOffTexture.width || lightsOffTexture.baseTexture.width;
@@ -11654,8 +11772,8 @@
         // Load lights_switch.png with swinging animation and lights_on.png for switching
         try {
             console.log('Loading lights_switch.png and lights_on.png...');
-            const lightsSwitchTexture = await Assets.load('assets/lights_switch.png');
-            lightsOnTexture = await Assets.load('assets/lights_on.png'); // Preload lights_on for switching
+            const lightsSwitchTexture = await loadAssetWithProgress('assets/lights_switch.png');
+            lightsOnTexture = await loadAssetWithProgress('assets/lights_on.png'); // Preload lights_on for switching
 
             // Get lights_switch actual dimensions
             const lightsSwitchImageWidth = lightsSwitchTexture.orig?.width || lightsSwitchTexture.width || lightsSwitchTexture.baseTexture.width;
@@ -11951,7 +12069,7 @@
         // Using separate canvas with CSS mix-blend-mode for color dodge effect
         try {
             console.log('Loading lights_ray.png...');
-            const lightsRayTexture = await Assets.load('assets/lights_ray.png');
+            const lightsRayTexture = await loadAssetWithProgress('assets/lights_ray.png');
 
             // Get lights_ray actual dimensions
             const lightsRayImageWidth = lightsRayTexture.orig?.width || lightsRayTexture.width || lightsRayTexture.baseTexture.width;

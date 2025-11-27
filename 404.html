@@ -5,15 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>404 - Page Not Found - The Prometheans</title>
     <!-- Theme-aware favicon -->
-    <link id="favicon" rel="icon" type="image/x-icon" href="assets/light_favicon.ico">
+    <link id="favicon" rel="icon" type="image/png" href="assets/light_favicon.png">
     <script>
         (function() {
             function updateFavicon() {
                 const favicon = document.getElementById('favicon');
                 if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                    favicon.href = 'assets/dark_favicon.ico';
+                    favicon.href = 'assets/dark_favicon.png';
                 } else {
-                    favicon.href = 'assets/light_favicon.ico';
+                    favicon.href = 'assets/light_favicon.png';
                 }
             }
             // Set initial favicon
