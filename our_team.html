@@ -66,6 +66,17 @@
             position: relative;
         }
         
+        /* Disable fixed background on mobile for better performance and to prevent scroll issues */
+        /* Make background repeat on mobile to fill the entire page */
+        @media (max-width: 1024px) {
+            body {
+                background-attachment: scroll;
+                background-repeat: repeat;
+                background-size: auto;
+                background-position: top left;
+            }
+        }
+        
         .page-wrapper {
             position: relative;
             width: 100%;
@@ -2310,6 +2321,8 @@
         let instructionAnimationId = null;
         let instructionResizeHandler = null;
         let isInstructionFading = false;
+        let instructionShown = false; // Track if instruction has been shown
+        let instructionScrollHandler = null; // Store scroll handler reference
 
         // Wait for PIXI.js to load
         (async () => {
@@ -2324,25 +2337,20 @@
                 const body = document.body;
                 const html = document.documentElement;
                 
-                // Get actual content dimensions
+                // Get actual content dimensions - use scrollHeight/scrollWidth for accurate measurement
                 const contentWidth = Math.max(
                     body.scrollWidth,
-                    body.offsetWidth,
-                    html.clientWidth,
-                    html.scrollWidth,
-                    html.offsetWidth
+                    html.scrollWidth
                 );
                 const contentHeight = Math.max(
                     body.scrollHeight,
-                    body.offsetHeight,
-                    html.clientHeight,
-                    html.scrollHeight,
-                    html.offsetHeight
+                    html.scrollHeight
                 );
                 
-                // Determine which directions need scrolling
-                const needsHorizontalScroll = contentWidth > viewportWidth;
-                const needsVerticalScroll = contentHeight > viewportHeight;
+                // Add a small threshold (5px) to prevent false positives from rounding errors
+                const scrollThreshold = 5;
+                const needsHorizontalScroll = contentWidth > (viewportWidth + scrollThreshold);
+                const needsVerticalScroll = contentHeight > (viewportHeight + scrollThreshold);
                 
                 return {
                     horizontal: needsHorizontalScroll,
@@ -2577,17 +2585,19 @@
                 const isMobile = window.innerWidth <= 1024;
                 if (!isMobile) return;
 
-                // Check if instruction has been shown before (optional)
-                // const instructionShown = localStorage.getItem('our_team_instruction_shown');
-                // if (instructionShown === 'true') return;
+                // Prevent showing instructions multiple times
+                if (instructionShown || isInstructionFading) return;
+                
+                // Check if instruction container already exists
+                const canvasContainer = document.getElementById('instruction-canvas-container');
+                if (!canvasContainer) return;
+                if (canvasContainer.style.display === 'block') return;
 
                 // Detect scrollable directions
                 const scrollInfo = detectScrollableDirections();
                 if (!scrollInfo.horizontal && !scrollInfo.vertical) return;
 
                 // Create PIXI application
-                const canvasContainer = document.getElementById('instruction-canvas-container');
-                if (!canvasContainer) return;
 
                 instructionApp = new PIXI.Application();
                 await instructionApp.init({
@@ -2602,6 +2612,9 @@
 
                 canvasContainer.appendChild(instructionApp.canvas);
                 canvasContainer.style.display = 'block';
+                
+                // Mark instruction as shown
+                instructionShown = true;
 
                 // Create instruction container
                 instructionContainer = new PIXI.Container();
@@ -2660,7 +2673,20 @@
                 instructionApp.canvas.addEventListener('pointerdown', hideOnInteraction, { once: true });
                 instructionApp.canvas.addEventListener('touchstart', hideOnInteraction, { once: true });
                 instructionApp.canvas.addEventListener('mousedown', hideOnInteraction, { once: true });
-                window.addEventListener('scroll', hideOnInteraction, { once: true });
+                
+                // Hide on scroll - use a more robust scroll listener
+                let scrollTimeout;
+                instructionScrollHandler = () => {
+                    if (instructionContainer && instructionContainer.visible) {
+                        clearTimeout(scrollTimeout);
+                        scrollTimeout = setTimeout(() => {
+                            fadeOutInstruction();
+                        }, 100);
+                    }
+                };
+                window.addEventListener('scroll', instructionScrollHandler, { passive: true });
+                // Also listen for touchmove to catch swipe gestures
+                window.addEventListener('touchmove', instructionScrollHandler, { passive: true });
             }
 
             // Function to fade out instruction
@@ -2668,7 +2694,7 @@
                 if (isInstructionFading || !instructionContainer || !instructionContainer.parent) return;
 
                 isInstructionFading = true;
-                // localStorage.setItem('our_team_instruction_shown', 'true');
+                instructionShown = true; // Mark as shown to prevent re-showing
 
                 // Remove animation ticker
                 if (instructionAnimationId !== null) {
@@ -2680,6 +2706,13 @@
                 if (instructionResizeHandler) {
                     window.removeEventListener('resize', instructionResizeHandler);
                     instructionResizeHandler = null;
+                }
+                
+                // Remove scroll and touch listeners (they're added in showInstructionAnimation)
+                if (instructionScrollHandler) {
+                    window.removeEventListener('scroll', instructionScrollHandler);
+                    window.removeEventListener('touchmove', instructionScrollHandler);
+                    instructionScrollHandler = null;
                 }
 
                 // Fade out
@@ -2713,16 +2746,16 @@
                 }, 1500);
             });
 
-            // Check on resize
+            // Check on resize - but don't re-show instructions if they've already been shown
             let resizeTimeout;
             window.addEventListener('resize', () => {
                 clearTimeout(resizeTimeout);
+                // Only handle resize for existing instruction app, don't re-show instructions
                 resizeTimeout = setTimeout(() => {
-                    const canvasContainer = document.getElementById('instruction-canvas-container');
-                    if (canvasContainer && canvasContainer.style.display === 'none') {
-                        showInstructionAnimation();
+                    if (instructionApp && instructionResizeHandler) {
+                        instructionResizeHandler();
                     }
-                }, 500);
+                }, 100);
             });
         })();
     </script>
