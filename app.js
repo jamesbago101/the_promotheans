@@ -257,6 +257,40 @@
         }
     }
 
+    // Function to enable audio when sprite is interacted with
+    // This automatically enables audio when user interacts with any animated sprite
+    function enableAudioOnSpriteInteraction() {
+        const bgMusic = document.getElementById('bg-music');
+        if (!bgMusic) return;
+
+        // Check if audio is already enabled
+        const isAudioEnabled = bgMusic.currentTime > 0 || (!bgMusic.paused && bgMusic.readyState >= 2);
+        
+        if (!isAudioEnabled) {
+            // Audio not enabled yet - enable it
+            console.log('Sprite interaction detected - enabling audio automatically');
+            
+            // Unmute and play audio
+            bgMusic.muted = false;
+            const playPromise = bgMusic.play();
+            
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    console.log('Audio enabled automatically via sprite interaction');
+                    // Sync sound effects with the new state
+                    syncGlitchSoundsMuteState();
+                }).catch((err) => {
+                    console.log('Could not enable audio via sprite interaction:', err);
+                });
+            }
+        } else if (bgMusic.muted) {
+            // Audio is playing but muted - unmute it
+            console.log('Sprite interaction detected - unmuting audio');
+            bgMusic.muted = false;
+            syncGlitchSoundsMuteState();
+        }
+    }
+
     // Initialize background music and audio control
     // Wait a bit to ensure DOM is ready
     setTimeout(() => {
@@ -5807,13 +5841,11 @@
     // Promo: 10 frames
     // Telegram: 9 frames
     // Blaised: 6 frames + 6 auras = 12
-    // Blaised action2: 2 frames + 2 auras = 4
-    // Blaised action3: 1 frame + 1 aura = 2
     // Wall art: 6 frames + 6 strokes = 12
     // Book: 1 + 1 stroke = 2
     // Lights: 3 (off, switch, ray)
-    // Total: 3 + 12 + 1 + 6 + 2 + 6 + 8 + 10 + 9 + 12 + 4 + 2 + 12 + 2 + 3 = 102
-    totalAssetsToLoad = 102;
+    // Total: 3 + 12 + 1 + 6 + 2 + 6 + 8 + 10 + 9 + 12 + 12 + 2 + 3 = 98
+    totalAssetsToLoad = 98;
     loadedAssetsCount = 0;
     console.log(`Starting to load ${totalAssetsToLoad} assets...`);
 
@@ -6203,6 +6235,7 @@
 
             // Glitch effect on hover - speed up animation when pointer enters capsule
             mutatorCapsuleSprite.on('pointerenter', () => {
+                enableAudioOnSpriteInteraction(); // Enable audio on sprite interaction
                 console.log('Pointer entered mutator capsule - glitch effect activated');
                 if (mutatorCapsuleSprite && mutatorCapsuleSprite.userData) {
                     const data = mutatorCapsuleSprite.userData;
@@ -6700,6 +6733,7 @@
 
             // Only the dot triggers the initial show (desktop only - mobile/tablet shows label text instead)
             mutatorCapsuleDot.on('pointerenter', (event) => {
+                enableAudioOnSpriteInteraction(); // Enable audio on sprite interaction
                 // Don't show circle text on mobile/tablet - label text is always visible
                 if (typeof window.isMobileOrTablet === 'function' && window.isMobileOrTablet()) {
                     return;
@@ -6876,6 +6910,7 @@
 
             // Make circle text clickable too (same as capsule)
             mutatorCapsuleCircleText.on('pointertap', () => {
+                enableAudioOnSpriteInteraction(); // Enable audio on sprite interaction
                 console.log('Circle text clicked - redirecting instantly to https://prometheans.talis.art/');
                 const redirectURL = 'https://prometheans.talis.art/';
                 
@@ -6900,6 +6935,7 @@
 
             // Click handler on dot only - redirects to link instantly (works on both desktop and mobile/tablet)
             mutatorCapsuleDot.on('pointertap', () => {
+                enableAudioOnSpriteInteraction(); // Enable audio on sprite interaction
                 console.log('Mutator capsule dot clicked - redirecting instantly to https://prometheans.talis.art/');
                 const redirectURL = 'https://prometheans.talis.art/';
                 
@@ -7063,6 +7099,7 @@
 
             // Simple pointer events - hop animation on hover
             cupSprite.on('pointerenter', (event) => {
+                enableAudioOnSpriteInteraction(); // Enable audio on sprite interaction
                 cupSprite.userData.isOverCup = true;
                 console.log('Pointer entered cup - starting hop animation');
 
@@ -7117,7 +7154,13 @@
             // Keep click handler for any click actions (but no animation on click)
             cupSprite.on('pointertap', (event) => {
                 console.log('Cup clicked!');
+                enableAudioOnSpriteInteraction(); // Enable audio on sprite interaction
                 // Cup is still clickable, but hop animation only happens on hover
+            });
+            
+            // Enable audio on hover as well
+            cupSprite.on('pointerenter', (event) => {
+                enableAudioOnSpriteInteraction(); // Enable audio on sprite interaction
             });
 
             app.ticker.add(() => {
@@ -7412,6 +7455,7 @@
 
             // Pointer events for responsive animation effect (works for mouse and touch)
             glitchSprite.on('pointerenter', (event) => {
+                enableAudioOnSpriteInteraction(); // Enable audio on sprite interaction
                 glitchSprite.userData.isOverGlitch = true;
                 const globalPos = event.global;
                 updateGlitchSpeed(globalPos);
@@ -7607,6 +7651,7 @@
 
             // Click handler - redirect to URL in new tab
             glitchSprite.on('pointertap', () => {
+                enableAudioOnSpriteInteraction(); // Enable audio on sprite interaction
                 console.log('Glitch sprite clicked - redirecting to https://xion.talis.art/collection/680f65c18d37e5bcd70be0dd in new tab');
                 // Open in new tab without showing loading screen (loading screen is only for same-page redirects)
                 window.open('https://xion.talis.art/collection/680f65c18d37e5bcd70be0dd', '_blank');
@@ -7708,6 +7753,7 @@
 
             // Pointer events to change eye texture on hover
             eyeLogoSprite.on('pointerenter', () => {
+                enableAudioOnSpriteInteraction(); // Enable audio on sprite interaction
                 // Change to closed eye when cursor enters
                 eyeLogoSprite.texture = eyeLogoSprite.userData.closedTexture;
                 console.log('Eye closed (cursor entered)');
@@ -8467,6 +8513,7 @@
             // Touch/click handlers for mobile and desktop - similar to glitch sprite
             // Handle pointerdown for better mobile touch support
             cctvDot.on('pointerdown', (event) => {
+                enableAudioOnSpriteInteraction(); // Enable audio on sprite interaction
                 // On mobile/tablet, don't show circle - just prepare for click
                 if (typeof window.isMobileOrTablet === 'function' && window.isMobileOrTablet()) {
                     event.stopPropagation(); // Prevent panning from starting
@@ -8499,6 +8546,7 @@
 
             // Also handle pointertap as fallback
             cctvDot.on('pointertap', (event) => {
+                enableAudioOnSpriteInteraction(); // Enable audio on sprite interaction
                 // On mobile/tablet, always redirect
                 if (typeof window.isMobileOrTablet === 'function' && window.isMobileOrTablet()) {
                     console.log('CCTV tapped (mobile/tablet) - redirecting to https://x.com/ThePrometheans_ in new tab');
@@ -8525,6 +8573,7 @@
             });
 
             cctvCircleText.on('pointertap', (event) => {
+                enableAudioOnSpriteInteraction(); // Enable audio on sprite interaction
                 console.log('CCTV circle clicked - redirecting to https://x.com/ThePrometheans_ in new tab');
                 window.open('https://x.com/ThePrometheans_', '_blank');
                 event.stopPropagation(); // Prevent panning
@@ -8657,6 +8706,7 @@
 
             // Hover effect - speed up animation (glitch effect) and play sound
             discordSprite.on('pointerenter', () => {
+                enableAudioOnSpriteInteraction(); // Enable audio on sprite interaction
                 console.log('Discord sprite hover - speeding up animation');
                 discordSprite.animationSpeed = glitchAnimationSpeed;
                 
@@ -8688,6 +8738,7 @@
 
             // Click handler - redirect to Discord invite in new tab
             discordSprite.on('pointertap', () => {
+                enableAudioOnSpriteInteraction(); // Enable audio on sprite interaction
                 console.log('Discord sprite clicked - redirecting to https://discord.com/invite/theprometheans in new tab');
                 // Open in new tab without showing loading screen (loading screen is only for same-page redirects)
                 window.open('https://discord.com/invite/theprometheans', '_blank');
@@ -8827,6 +8878,7 @@
 
             // Hover effect - speed up animation (glitch effect) and play sound
             promoSprite.on('pointerenter', () => {
+                enableAudioOnSpriteInteraction(); // Enable audio on sprite interaction
                 console.log('Promo sprite hover - speeding up animation');
                 promoSprite.animationSpeed = glitchAnimationSpeed;
                 
@@ -8988,6 +9040,7 @@
 
             // Hover effect - speed up animation (glitch effect) and play sound
             telegramSprite.on('pointerenter', () => {
+                enableAudioOnSpriteInteraction(); // Enable audio on sprite interaction
                 console.log('Telegram sprite hover - speeding up animation');
                 telegramSprite.animationSpeed = glitchAnimationSpeed;
                 
@@ -9019,6 +9072,7 @@
 
             // Click handler - redirect to Telegram in new tab
             telegramSprite.on('pointertap', () => {
+                enableAudioOnSpriteInteraction(); // Enable audio on sprite interaction
                 console.log('Telegram sprite clicked - redirecting to Telegram in new tab');
                 // Open in new tab without showing loading screen (loading screen is only for same-page redirects)
                 window.open('https://t.me/+F0B_cOIRwgkzZGJk', '_blank');
@@ -9296,336 +9350,7 @@
             console.error('Error loading Blaised Aura:', error);
         }
 
-        // Load Blaised Action2 animated frames (blaised_action2_1.png, blaised_action2_2.png - 2 frames)
-        try {
-            console.log('Loading Blaised Action2 frames...');
-            const blaisedAction2Textures = [];
-
-            // Load 2 frames
-            for (let i = 1; i <= 2; i++) {
-                const texture = await loadAssetWithProgress(`assets/blaised_action2_${i}.png`);
-                blaisedAction2Textures.push(texture);
-                console.log(`  Loaded blaised_action2_${i}.png:`, texture.width, 'x', texture.height);
-            }
-
-            console.log(`  Loaded all ${blaisedAction2Textures.length} Blaised Action2 frames`);
-
-            // Create AnimatedSprite from the Blaised Action2 textures
-            blaisedAction2Sprite = new AnimatedSprite(blaisedAction2Textures);
-            blaisedAction2Sprite.anchor.set(0.5);
-
-            // Configure Blaised Action2 animation settings
-            blaisedAction2Sprite.animationSpeed = BLAISED_ANIMATION_SPEED;
-            blaisedAction2Sprite.loop = true; // Loop continuously when active
-
-            // Hide sprite initially (only shows on hover)
-            blaisedAction2Sprite.visible = false;
-            blaisedAction2Sprite.alpha = 1.0;
-
-            // Store config in userData (same as default blaised sprite)
-            blaisedAction2Sprite.userData = blaisedAction2Sprite.userData || {};
-            if (blaisedSprite && blaisedSprite.userData && blaisedSprite.userData.config) {
-                blaisedAction2Sprite.userData.config = blaisedSprite.userData.config; // Use same config as default
-            }
-
-            // Add to stage
-            app.stage.addChild(blaisedAction2Sprite);
-
-            console.log('Blaised Action2 AnimatedSprite created:', {
-                textures: blaisedAction2Textures.length,
-                playing: blaisedAction2Sprite.playing,
-                loop: blaisedAction2Sprite.loop,
-                animationSpeed: blaisedAction2Sprite.animationSpeed
-            });
-
-        } catch (error) {
-            console.error('Error loading Blaised Action2:', error);
-        }
-
-        // Load Blaised Action2 Aura animated frames (blaised_action2_1_aura.png, blaised_action2_2_aura.png - 2 frames)
-        try {
-            console.log('Loading Blaised Action2 Aura frames...');
-            const blaisedAction2AuraTextures = [];
-
-            // Load 2 frames
-            for (let i = 1; i <= 2; i++) {
-                const texture = await loadAssetWithProgress(`assets/blaised_action2_${i}_aura.png`);
-                blaisedAction2AuraTextures.push(texture);
-                console.log(`  Loaded blaised_action2_${i}_aura.png:`, texture.width, 'x', texture.height);
-            }
-
-            console.log(`  Loaded all ${blaisedAction2AuraTextures.length} Blaised Action2 Aura frames`);
-
-            // Create a separate PIXI application for the action2 aura sprite layer
-            blaisedAction2AuraApp = new Application();
-            await blaisedAction2AuraApp.init({
-                background: 'transparent',
-                resizeTo: window,
-                resolution: window.devicePixelRatio || 1,
-                autoDensity: true,
-                antialias: true
-            });
-
-            blaisedAction2AuraApp.ticker.stopOnMinimize = false;
-
-            // Create AnimatedSprite from the Blaised Action2 Aura textures
-            blaisedAction2AuraSprite = new AnimatedSprite(blaisedAction2AuraTextures);
-            blaisedAction2AuraSprite.anchor.set(0.5);
-
-            // Configure Blaised Action2 Aura animation settings
-            blaisedAction2AuraSprite.animationSpeed = BLAISED_ANIMATION_SPEED;
-            blaisedAction2AuraSprite.loop = true; // Loop continuously when active
-
-            // Hide sprite initially (only shows on hover)
-            blaisedAction2AuraSprite.visible = false;
-            blaisedAction2AuraSprite.alpha = 1.0;
-
-            // Store config in userData (same as default blaised aura sprite)
-            blaisedAction2AuraSprite.userData = blaisedAction2AuraSprite.userData || {};
-            if (blaisedAuraSprite && blaisedAuraSprite.userData && blaisedAuraSprite.userData.config) {
-                blaisedAction2AuraSprite.userData.config = blaisedAuraSprite.userData.config; // Use same config as default
-            }
-
-            // Add sprite to the separate app
-            blaisedAction2AuraApp.stage.addChild(blaisedAction2AuraSprite);
-
-            // Get the sprite canvas and apply CSS blend mode
-            const action2AuraCanvas = blaisedAction2AuraApp.canvas;
-            action2AuraCanvas.style.position = 'absolute';
-            action2AuraCanvas.style.top = '0';
-            action2AuraCanvas.style.left = '0';
-            action2AuraCanvas.style.mixBlendMode = 'color-dodge';
-            action2AuraCanvas.style.pointerEvents = 'none';
-            action2AuraCanvas.style.zIndex = '1';
-
-            // Add aura canvas to the container
-            const container = document.getElementById('canvas-container');
-            if (container) {
-                container.appendChild(action2AuraCanvas);
-                console.log('Blaised Action2 Aura canvas added to container with CSS color-dodge blend mode');
-            }
-
-            console.log('Blaised Action2 Aura AnimatedSprite created:', {
-                textures: blaisedAction2AuraTextures.length,
-                playing: blaisedAction2AuraSprite.playing,
-                loop: blaisedAction2AuraSprite.loop,
-                animationSpeed: blaisedAction2AuraSprite.animationSpeed,
-                blendMode: 'CSS color-dodge (mix-blend-mode)'
-            });
-
-        } catch (error) {
-            console.error('Error loading Blaised Action2 Aura:', error);
-        }
-
-        // Load Blaised Action3 animated frames (blaised_action3_1.png - 1 frame)
-        try {
-            console.log('Loading Blaised Action3 frames...');
-            const blaisedAction3Textures = [];
-
-            // Load 1 frame
-            const texture = await loadAssetWithProgress(`assets/blaised_action3_1.png`);
-            blaisedAction3Textures.push(texture);
-            console.log(`  Loaded blaised_action3_1.png:`, texture.width, 'x', texture.height);
-
-            console.log(`  Loaded all ${blaisedAction3Textures.length} Blaised Action3 frames`);
-
-            // Create AnimatedSprite from the Blaised Action3 textures
-            blaisedAction3Sprite = new AnimatedSprite(blaisedAction3Textures);
-            blaisedAction3Sprite.anchor.set(0.5);
-
-            // Configure Blaised Action3 animation settings
-            blaisedAction3Sprite.animationSpeed = BLAISED_ANIMATION_SPEED;
-            blaisedAction3Sprite.loop = false; // Play once, don't loop
-
-            // Hide sprite initially (only shows on hover after action2)
-            blaisedAction3Sprite.visible = false;
-            blaisedAction3Sprite.alpha = 1.0;
-
-            // Get Action3 dimensions (use first frame as reference)
-            const blaisedAction3ImageWidth = blaisedAction3Textures[0].orig?.width || blaisedAction3Textures[0].width || blaisedAction3Textures[0].baseTexture.width;
-            const blaisedAction3ImageHeight = blaisedAction3Textures[0].orig?.height || blaisedAction3Textures[0].height || blaisedAction3Textures[0].baseTexture.height;
-
-            console.log(`Blaised Action3 texture loaded: ${blaisedAction3ImageWidth}x${blaisedAction3ImageHeight}`);
-
-            // Blaised Action3 positioning and sizing config (different position from default)
-            // Position on bg1.png (in pixels):
-            // Left X: 4009, Right X: 4009 + 564 = 4573, Top Y: 1162, Bottom Y: 2453
-            // Center X: (4009 + 4573) / 2 = 4291
-            // Center Y: (1162 + 2453) / 2 = 1807.5
-            // Dimensions: width: 564 pixels, height: 791 pixels (on bg1.png)
-            const blaisedAction3Config = {
-                // Blaised Action3 dimensions (on bg1.png coordinate space)
-                blaisedAction3Width: 564,
-                blaisedAction3Height: 791,
-
-                // Position on bg1.png (center of Blaised Action3)
-                bg1X: 4291, // Center X position on bg1.png
-                bg1Y: 1807.5, // Center Y position on bg1.png
-
-                // Scale: calculated to make Blaised Action3 fit its designated space on bg1.png
-                scale: 1.0, // Will be calculated below
-
-                // Fine-tuning offsets
-                offsetX: 0, // Additional offset in pixels (positive = right, negative = left)
-                offsetY: 0, // Additional offset in pixels (positive = down, negative = up)
-            };
-
-            // Calculate scale to make Blaised Action3 image fit into designated space on bg1.png
-            if (blaisedAction3ImageWidth && blaisedAction3ImageHeight && blaisedAction3Config.blaisedAction3Width && blaisedAction3Config.blaisedAction3Height) {
-                const relativeScaleX = blaisedAction3Config.blaisedAction3Width / blaisedAction3ImageWidth;
-                const relativeScaleY = blaisedAction3Config.blaisedAction3Height / blaisedAction3ImageHeight;
-
-                // Use the smaller scale to ensure it fits (maintains aspect ratio)
-                blaisedAction3Config.scale = Math.min(relativeScaleX, relativeScaleY);
-            } else {
-                // Fallback: use natural size
-                blaisedAction3Config.scale = 1.0;
-            }
-
-            console.log(`Blaised Action3 config:`);
-            console.log(`  Blaised Action3 dimensions on bg1.png: ${blaisedAction3Config.blaisedAction3Width}x${blaisedAction3Config.blaisedAction3Height}`);
-            console.log(`  BG1 position (center): (${blaisedAction3Config.bg1X}, ${blaisedAction3Config.bg1Y})`);
-            console.log(`  Actual Blaised Action3 image size: ${blaisedAction3ImageWidth}x${blaisedAction3ImageHeight}`);
-            console.log(`  Calculated scale: ${blaisedAction3Config.scale}`);
-
-            // Store config in userData (different position from default blaised sprite)
-            blaisedAction3Sprite.userData = blaisedAction3Sprite.userData || {};
-            blaisedAction3Sprite.userData.config = blaisedAction3Config;
-
-            // Add to stage
-            app.stage.addChild(blaisedAction3Sprite);
-
-            console.log('Blaised Action3 AnimatedSprite created:', {
-                textures: blaisedAction3Textures.length,
-                playing: blaisedAction3Sprite.playing,
-                loop: blaisedAction3Sprite.loop,
-                animationSpeed: blaisedAction3Sprite.animationSpeed
-            });
-
-        } catch (error) {
-            console.error('Error loading Blaised Action3:', error);
-        }
-
-        // Load Blaised Action3 Aura animated frames (blaised_action3_1_aura.png - 1 frame)
-        try {
-            console.log('Loading Blaised Action3 Aura frames...');
-            const blaisedAction3AuraTextures = [];
-
-            // Load 1 frame
-            const texture = await loadAssetWithProgress(`assets/blaised_action3_1_aura.png`);
-            blaisedAction3AuraTextures.push(texture);
-            console.log(`  Loaded blaised_action3_1_aura.png:`, texture.width, 'x', texture.height);
-
-            console.log(`  Loaded all ${blaisedAction3AuraTextures.length} Blaised Action3 Aura frames`);
-
-            // Create a separate PIXI application for the action3 aura sprite layer
-            blaisedAction3AuraApp = new Application();
-            await blaisedAction3AuraApp.init({
-                background: 'transparent',
-                resizeTo: window,
-                resolution: window.devicePixelRatio || 1,
-                autoDensity: true,
-                antialias: true
-            });
-
-            blaisedAction3AuraApp.ticker.stopOnMinimize = false;
-
-            // Create AnimatedSprite from the Blaised Action3 Aura textures
-            blaisedAction3AuraSprite = new AnimatedSprite(blaisedAction3AuraTextures);
-            blaisedAction3AuraSprite.anchor.set(0.5);
-
-            // Configure Blaised Action3 Aura animation settings
-            blaisedAction3AuraSprite.animationSpeed = BLAISED_ANIMATION_SPEED;
-            blaisedAction3AuraSprite.loop = false; // Play once, don't loop
-
-            // Hide sprite initially (only shows on hover after action2)
-            blaisedAction3AuraSprite.visible = false;
-            blaisedAction3AuraSprite.alpha = 1.0;
-
-            // Get Blaised Action3 Aura dimensions (use first frame as reference)
-            const blaisedAction3AuraImageWidth = blaisedAction3AuraTextures[0].orig?.width || blaisedAction3AuraTextures[0].width || blaisedAction3AuraTextures[0].baseTexture.width;
-            const blaisedAction3AuraImageHeight = blaisedAction3AuraTextures[0].orig?.height || blaisedAction3AuraTextures[0].height || blaisedAction3AuraTextures[0].baseTexture.height;
-
-            console.log(`Blaised Action3 Aura texture loaded: ${blaisedAction3AuraImageWidth}x${blaisedAction3AuraImageHeight}`);
-
-            // Blaised Action3 Aura positioning and sizing config (same position as action3 sprite)
-            // Position on bg1.png (in pixels):
-            // Left X: 4009, Right X: 4009 + 564 = 4573, Top Y: 1162, Bottom Y: 2453
-            // Center X: (4009 + 4573) / 2 = 4291
-            // Center Y: (1162 + 2453) / 2 = 1807.5
-            // Dimensions: width: 564 pixels, height: 791 pixels (on bg1.png)
-            const blaisedAction3AuraConfig = {
-                // Blaised Action3 Aura dimensions (on bg1.png coordinate space)
-                blaisedAction3AuraWidth: 564,
-                blaisedAction3AuraHeight: 791,
-
-                // Position on bg1.png (center of Blaised Action3 Aura) - same as action3 sprite
-                bg1X: 4291, // Center X position on bg1.png
-                bg1Y: 1807.5, // Center Y position on bg1.png
-
-                // Scale: calculated to make Blaised Action3 Aura fit its designated space on bg1.png
-                scale: 1.0, // Will be calculated below
-
-                // Fine-tuning offsets
-                offsetX: 0, // Additional offset in pixels (positive = right, negative = left)
-                offsetY: 0, // Additional offset in pixels (positive = down, negative = up)
-            };
-
-            // Calculate scale to make Blaised Action3 Aura image fit into designated space on bg1.png
-            if (blaisedAction3AuraImageWidth && blaisedAction3AuraImageHeight && blaisedAction3AuraConfig.blaisedAction3AuraWidth && blaisedAction3AuraConfig.blaisedAction3AuraHeight) {
-                const relativeScaleX = blaisedAction3AuraConfig.blaisedAction3AuraWidth / blaisedAction3AuraImageWidth;
-                const relativeScaleY = blaisedAction3AuraConfig.blaisedAction3AuraHeight / blaisedAction3AuraImageHeight;
-
-                // Use the smaller scale to ensure it fits (maintains aspect ratio)
-                blaisedAction3AuraConfig.scale = Math.min(relativeScaleX, relativeScaleY);
-            } else {
-                // Fallback: use natural size
-                blaisedAction3AuraConfig.scale = 1.0;
-            }
-
-            console.log(`Blaised Action3 Aura config:`);
-            console.log(`  Blaised Action3 Aura dimensions on bg1.png: ${blaisedAction3AuraConfig.blaisedAction3AuraWidth}x${blaisedAction3AuraConfig.blaisedAction3AuraHeight}`);
-            console.log(`  BG1 position (center): (${blaisedAction3AuraConfig.bg1X}, ${blaisedAction3AuraConfig.bg1Y})`);
-            console.log(`  Actual Blaised Action3 Aura image size: ${blaisedAction3AuraImageWidth}x${blaisedAction3AuraImageHeight}`);
-            console.log(`  Calculated scale: ${blaisedAction3AuraConfig.scale}`);
-
-            // Store config in userData (same position as action3 sprite)
-            blaisedAction3AuraSprite.userData = blaisedAction3AuraSprite.userData || {};
-            blaisedAction3AuraSprite.userData.config = blaisedAction3AuraConfig;
-
-            // Add sprite to the separate app
-            blaisedAction3AuraApp.stage.addChild(blaisedAction3AuraSprite);
-
-            // Get the sprite canvas and apply CSS blend mode
-            const action3AuraCanvas = blaisedAction3AuraApp.canvas;
-            action3AuraCanvas.style.position = 'absolute';
-            action3AuraCanvas.style.top = '0';
-            action3AuraCanvas.style.left = '0';
-            action3AuraCanvas.style.mixBlendMode = 'color-dodge';
-            action3AuraCanvas.style.pointerEvents = 'none';
-            action3AuraCanvas.style.zIndex = '1';
-
-            // Add aura canvas to the container
-            const container = document.getElementById('canvas-container');
-            if (container) {
-                container.appendChild(action3AuraCanvas);
-                console.log('Blaised Action3 Aura canvas added to container with CSS color-dodge blend mode');
-            }
-
-            console.log('Blaised Action3 Aura AnimatedSprite created:', {
-                textures: blaisedAction3AuraTextures.length,
-                playing: blaisedAction3AuraSprite.playing,
-                loop: blaisedAction3AuraSprite.loop,
-                animationSpeed: blaisedAction3AuraSprite.animationSpeed,
-                blendMode: 'CSS color-dodge (mix-blend-mode)'
-            });
-
-        } catch (error) {
-            console.error('Error loading Blaised Action3 Aura:', error);
-        }
-
-        // Blaised sprite - no hover triggers, just display the default animation continuously
-        // Action2 sprite functionality removed as requested
+        // Blaised Action2 and Action3 sprites removed - files no longer exist
 
         // Load Wall Art animated frames (wall_art1.png to wall_art6.png - 6 frames total)
         try {
@@ -9924,6 +9649,7 @@
 
             // Trigger animation when cursor enters the wall art sprite (like cup)
             wallArtSprite.on('pointerenter', () => {
+                enableAudioOnSpriteInteraction(); // Enable audio on sprite interaction
                 isCursorOverWallArt = true;
                 // Play animation once when cursor enters (like cup hop)
                 // If already playing, restart it
@@ -10686,6 +10412,7 @@
             // Touch/click handlers for mobile and desktop - similar to CCTV
             // Handle pointerdown for better mobile touch support
             wallArtDot.on('pointerdown', (event) => {
+                enableAudioOnSpriteInteraction(); // Enable audio on sprite interaction
                 // On mobile/tablet, don't show circle - just prepare for click
                 if (typeof window.isMobileOrTablet === 'function' && window.isMobileOrTablet()) {
                     event.stopPropagation(); // Prevent panning from starting
@@ -10716,6 +10443,7 @@
 
             // Also handle pointertap as fallback
             wallArtDot.on('pointertap', (event) => {
+                enableAudioOnSpriteInteraction(); // Enable audio on sprite interaction
                 // On mobile/tablet, always redirect
                 if (typeof window.isMobileOrTablet === 'function' && window.isMobileOrTablet()) {
                     console.log('Wall Art tapped (mobile/tablet) - redirecting to our_team');
@@ -10738,6 +10466,7 @@
             });
 
             wallArtCircleText.on('pointertap', () => {
+                enableAudioOnSpriteInteraction(); // Enable audio on sprite interaction
                 console.log('Wall Art circle clicked - redirecting to our_team');
                 window.location.href = 'our_team.html';
             });
@@ -11420,6 +11149,7 @@
             // Touch/click handlers for mobile and desktop
             // Handle pointerdown for better mobile touch support
             bookDot.on('pointerdown', (event) => {
+                enableAudioOnSpriteInteraction(); // Enable audio on sprite interaction
                 // On mobile/tablet, don't show circle - just prepare for click
                 if (typeof window.isMobileOrTablet === 'function' && window.isMobileOrTablet()) {
                     event.stopPropagation(); // Prevent panning from starting
@@ -11451,6 +11181,7 @@
 
             // Also handle pointertap as fallback
             bookDot.on('pointertap', (event) => {
+                enableAudioOnSpriteInteraction(); // Enable audio on sprite interaction
                 // On mobile/tablet, always redirect
                 if (typeof window.isMobileOrTablet === 'function' && window.isMobileOrTablet()) {
                     console.log('Book tapped (mobile/tablet) - redirecting to community page');
@@ -11477,6 +11208,7 @@
             });
 
             bookCircleText.on('pointertap', (event) => {
+                enableAudioOnSpriteInteraction(); // Enable audio on sprite interaction
                 console.log('Book circle clicked - redirecting to community page');
                 window.location.href = 'community.html';
                 event.stopPropagation(); // Prevent panning
@@ -11676,6 +11408,7 @@
             
             // Track pointer movement for tap-to-bounce
             lightsOffSprite.on('pointerenter', (event) => {
+                enableAudioOnSpriteInteraction(); // Enable audio on sprite interaction
                 isPointerOverLights = true;
                 const globalPos = event.global;
                 previousPointerX = globalPos.x;
@@ -11940,6 +11673,7 @@
 
             // Trigger on pointer enter (hover)
             lightsSwitchSprite.on('pointerenter', (event) => {
+                enableAudioOnSpriteInteraction(); // Enable audio on sprite interaction
                 event.stopPropagation(); // Prevent panning
                 isPointerOver = true;
                 
