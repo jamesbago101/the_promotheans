@@ -1796,30 +1796,6 @@
             }
         };
 
-        // Preload all full view images so they're ready when modal opens
-        function preloadFullViewImages() {
-            const imagePaths = [
-                'assets/team_card1_full_view.png',
-                'assets/team_card2_full_view.png',
-                'assets/team_card3_full_view.png',
-                'assets/team_card4_full_view.png'
-            ];
-            
-            imagePaths.forEach(imagePath => {
-                const img = new Image();
-                img.src = imagePath;
-                img.onload = () => {
-                    console.log(`Preloaded: ${imagePath}`);
-                };
-                img.onerror = () => {
-                    console.warn(`Failed to preload: ${imagePath}`);
-                };
-            });
-        }
-        
-        // Preload images immediately when page loads
-        preloadFullViewImages();
-
         // Posters popup functionality
         const headerLogo = document.getElementById('header-logo-img');
         const postersPopup = document.getElementById('posters-popup');
@@ -1848,34 +1824,8 @@
             if (data) {
                 // Use full view image if available, otherwise use regular card
                 const imageSrc = data.fullViewImage ? `assets/${data.fullViewImage}` : `assets/${teamId}.png`;
-                
-                // Set image source immediately (should be preloaded)
                 posterPopupImage.src = imageSrc;
                 posterPopupImage.alt = data.name || 'Team Card';
-                
-                // Function to show modal (called after image loads)
-                const showPosterModal = () => {
-                    posterPopup.classList.add('active');
-                    document.body.style.overflow = 'hidden';
-                };
-                
-                // Check if image is already loaded
-                if (posterPopupImage.complete && posterPopupImage.naturalWidth > 0) {
-                    // Image already loaded, show modal immediately
-                    // (setup code below will run first, then showPosterModal will be called)
-                } else {
-                    // Wait for image to load before showing modal
-                    const originalOnload = posterPopupImage.onload;
-                    posterPopupImage.onload = () => {
-                        if (originalOnload) originalOnload();
-                        showPosterModal();
-                    };
-                    posterPopupImage.onerror = () => {
-                        // Even if error, show modal anyway after a short delay
-                        console.warn('Image failed to load:', imageSrc);
-                        setTimeout(showPosterModal, 100);
-                    };
-                }
 
                 // For team_card4, show only full image (no info panel)
                 if (teamId === 'team_card4') {
@@ -1970,11 +1920,8 @@
                     posterPopupDescription.style.display = 'none';
                 }
 
-                // Show modal after all setup is done (only if image is already loaded)
-                // If image is not loaded yet, showPosterModal will be called from onload handler
-                if (posterPopupImage.complete && posterPopupImage.naturalWidth > 0) {
-                    showPosterModal();
-                }
+                posterPopup.classList.add('active');
+                document.body.style.overflow = 'hidden';
             }
         }
 
@@ -2759,12 +2706,24 @@
                 });
             }
 
-            // Instructions disabled - removed per user request
-            // window.addEventListener('load', () => {
-            //     setTimeout(() => {
-            //         showInstructionAnimation();
-            //     }, 1500);
-            // });
+            // Show instruction after page loads
+            window.addEventListener('load', () => {
+                setTimeout(() => {
+                    showInstructionAnimation();
+                }, 1500);
+            });
+
+            // Check on resize
+            let resizeTimeout;
+            window.addEventListener('resize', () => {
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(() => {
+                    const canvasContainer = document.getElementById('instruction-canvas-container');
+                    if (canvasContainer && canvasContainer.style.display === 'none') {
+                        showInstructionAnimation();
+                    }
+                }, 500);
+            });
         })();
     </script>
 </body>
