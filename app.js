@@ -257,38 +257,95 @@
         }
     }
 
+    // Global references for audio state and update function (set by initBackgroundMusic)
+    let globalAudioState = {
+        isPlaying: false,
+        userInteracted: false,
+        hasEverPlayed: false,
+        userManuallyToggled: false, // Track if user manually clicked the audio icon
+        updateIcon: null
+    };
+
     // Function to enable audio when sprite is interacted with
     // This automatically enables audio when user interacts with any animated sprite
+    // BUT: If user manually muted audio, don't auto-enable (respect user's choice)
+    // Returns a promise that resolves when audio is enabled (or immediately if already enabled)
     function enableAudioOnSpriteInteraction() {
-        const bgMusic = document.getElementById('bg-music');
-        if (!bgMusic) return;
-
-        // Check if audio is already enabled
-        const isAudioEnabled = bgMusic.currentTime > 0 || (!bgMusic.paused && bgMusic.readyState >= 2);
-        
-        if (!isAudioEnabled) {
-            // Audio not enabled yet - enable it
-            console.log('Sprite interaction detected - enabling audio automatically');
-            
-            // Unmute and play audio
-            bgMusic.muted = false;
-            const playPromise = bgMusic.play();
-            
-            if (playPromise !== undefined) {
-                playPromise.then(() => {
-                    console.log('Audio enabled automatically via sprite interaction');
-                    // Sync sound effects with the new state
-                    syncGlitchSoundsMuteState();
-                }).catch((err) => {
-                    console.log('Could not enable audio via sprite interaction:', err);
-                });
+        return new Promise((resolve) => {
+            const bgMusic = document.getElementById('bg-music');
+            if (!bgMusic) {
+                resolve();
+                return;
             }
-        } else if (bgMusic.muted) {
-            // Audio is playing but muted - unmute it
-            console.log('Sprite interaction detected - unmuting audio');
-            bgMusic.muted = false;
-            syncGlitchSoundsMuteState();
-        }
+
+            // If user manually toggled audio to muted, don't auto-enable via sprite interaction
+            // This respects the user's explicit choice to mute
+            if (globalAudioState && globalAudioState.userManuallyToggled && bgMusic.muted) {
+                console.log('Sprite interaction detected but audio was manually muted - respecting user choice');
+                resolve();
+                return; // Don't auto-enable if user manually muted
+            }
+
+            // Check if audio is already enabled
+            const isAudioEnabled = bgMusic.currentTime > 0 || (!bgMusic.paused && bgMusic.readyState >= 2);
+            
+            if (!isAudioEnabled) {
+                // Audio not enabled yet - enable it (only on first load, before manual toggle)
+                console.log('Sprite interaction detected - enabling audio automatically (first load)');
+                
+                // Unmute and play audio
+                bgMusic.muted = false;
+                const playPromise = bgMusic.play();
+                
+                if (playPromise !== undefined) {
+                    playPromise.then(() => {
+                        console.log('Audio enabled automatically via sprite interaction');
+                        // Update state variables
+                        if (globalAudioState) {
+                            globalAudioState.isPlaying = true;
+                            globalAudioState.userInteracted = true;
+                            globalAudioState.hasEverPlayed = true;
+                        }
+                        // Sync sound effects with the new state
+                        syncGlitchSoundsMuteState();
+                        // Update icon to reflect new state
+                        if (globalAudioState && globalAudioState.updateIcon) {
+                            globalAudioState.updateIcon();
+                            console.log('Icon updated after sprite interaction - audio should be enabled');
+                        } else {
+                            console.warn('updateIcon not available in globalAudioState');
+                        }
+                        resolve(); // Resolve when audio is enabled
+                    }).catch((err) => {
+                        console.log('Could not enable audio via sprite interaction:', err);
+                        resolve(); // Resolve even on error
+                    });
+                } else {
+                    resolve(); // If play() returns undefined, resolve immediately
+                }
+            } else if (bgMusic.muted && !globalAudioState.userManuallyToggled) {
+                // Audio is playing but muted - unmute it (only if not manually muted)
+                console.log('Sprite interaction detected - unmuting audio (not manually muted)');
+                bgMusic.muted = false;
+                // Update state variables
+                if (globalAudioState) {
+                    globalAudioState.isPlaying = true;
+                    globalAudioState.userInteracted = true;
+                }
+                syncGlitchSoundsMuteState();
+                // Update icon to reflect new state
+                if (globalAudioState && globalAudioState.updateIcon) {
+                    globalAudioState.updateIcon();
+                    console.log('Icon updated after sprite interaction (unmute) - audio should be enabled');
+                } else {
+                    console.warn('updateIcon not available in globalAudioState');
+                }
+                resolve(); // Resolve immediately when just unmuting
+            } else {
+                // Audio is already enabled and not muted
+                resolve(); // Resolve immediately
+            }
+        });
     }
 
     // Initialize background music and audio control
@@ -336,6 +393,12 @@
         let hasEverPlayed = false; // Track if audio has ever been played
         let isToggling = false; // Prevent multiple rapid toggles
         
+        // Store references in global state so enableAudioOnSpriteInteraction can access them
+        globalAudioState.isPlaying = isPlaying;
+        globalAudioState.userInteracted = userInteracted;
+        globalAudioState.hasEverPlayed = hasEverPlayed;
+        globalAudioState.userManuallyToggled = false; // Initialize to false (user hasn't manually toggled yet)
+        
         // Keep audio control hidden until loading screen finishes (CSS handles this with display: none)
 
         // Function to update icon display
@@ -353,6 +416,16 @@
                     audioControl.classList.remove('muted');
                 }
             }
+        }
+        
+        // Store updateIcon reference in global state so enableAudioOnSpriteInteraction can call it
+        globalAudioState.updateIcon = updateIcon;
+        
+        // Helper function to sync local state with global state
+        function syncStateToGlobal() {
+            globalAudioState.isPlaying = isPlaying;
+            globalAudioState.userInteracted = userInteracted;
+            globalAudioState.hasEverPlayed = hasEverPlayed;
         }
 
         // Function to toggle mute/unmute
@@ -373,6 +446,17 @@
                 isToggling = false;
             }, 100); // 100ms debounce
             
+            // Sync local state from global state (in case sprite interaction updated it)
+            if (globalAudioState) {
+                isPlaying = globalAudioState.isPlaying || isPlaying;
+                userInteracted = globalAudioState.userInteracted || userInteracted;
+                hasEverPlayed = globalAudioState.hasEverPlayed || hasEverPlayed;
+            }
+            
+            // Also check actual audio state (more reliable than local variables)
+            const audioIsPlaying = !bgMusic.paused && bgMusic.readyState >= 2;
+            const audioHasPlayed = bgMusic.currentTime > 0 || audioIsPlaying;
+            
             console.log('Audio control clicked', { 
                 isPlaying, 
                 userInteracted, 
@@ -380,12 +464,17 @@
                 paused: bgMusic.paused,
                 readyState: bgMusic.readyState,
                 currentTime: bgMusic.currentTime,
-                hasEverPlayed
+                hasEverPlayed,
+                audioIsPlaying,
+                audioHasPlayed,
+                globalState: globalAudioState
             });
             
             // If audio has never been started (truly first time), try to start it
-            if (!hasEverPlayed && !userInteracted && bgMusic.currentTime === 0) {
+            if (!hasEverPlayed && !userInteracted && bgMusic.currentTime === 0 && !audioHasPlayed) {
                 console.log('First click - attempting to start audio...');
+                // Mark that user manually clicked the icon
+                globalAudioState.userManuallyToggled = true;
                 // Unmute if it was muted for autoplay
                 if (bgMusic.muted) {
                     bgMusic.muted = false;
@@ -397,12 +486,14 @@
                         isPlaying = true;
                         userInteracted = true;
                         hasEverPlayed = true;
+                        syncStateToGlobal(); // Sync to global state
                         updateIcon();
                         console.log('Background music started successfully, muted:', bgMusic.muted);
                     }).catch((error) => {
                         console.error('Could not play audio:', error);
                         userInteracted = true;
                         isPlaying = false;
+                        syncStateToGlobal(); // Sync to global state
                         console.warn('Audio playback failed. User may need to interact with page first.');
                     });
                 }
@@ -410,17 +501,29 @@
             }
             
             // If already playing but muted (from autoplay), unmute on user interaction
-            if (isPlaying && bgMusic.muted && !userInteracted) {
+            if ((isPlaying || audioIsPlaying) && bgMusic.muted && !userInteracted) {
                 bgMusic.muted = false;
                 userInteracted = true;
+                isPlaying = true;
+                hasEverPlayed = true;
+                syncStateToGlobal(); // Sync to global state
                 updateIcon();
                 console.log('Background music unmuted after user interaction');
                 return;
             }
 
-            // If audio has been started before, just toggle mute state
+            // If audio has been started before (either via sprite or manually), just toggle mute state
             // Don't restart audio, just toggle mute - this is the key fix
-            if (hasEverPlayed || userInteracted) {
+            if (hasEverPlayed || userInteracted || audioHasPlayed) {
+                // Mark that user manually toggled audio (so sprite interactions won't override)
+                globalAudioState.userManuallyToggled = true;
+                
+                // Update local state to match global state (in case sprite interaction updated it)
+                isPlaying = audioIsPlaying || isPlaying || globalAudioState.isPlaying;
+                userInteracted = true;
+                hasEverPlayed = audioHasPlayed || hasEverPlayed || globalAudioState.hasEverPlayed;
+                syncStateToGlobal(); // Sync to global state
+                
                 // Store current state before toggle
                 const currentMuteState = bgMusic.muted;
                 const newMuteState = !currentMuteState;
@@ -443,8 +546,26 @@
                     }
                 }, 50);
                 
-                console.log('Audio muted toggled to:', bgMusic.muted, 'was:', currentMuteState, 'isPlaying:', isPlaying, 'paused:', bgMusic.paused);
+                console.log('Audio muted toggled to:', bgMusic.muted, 'was:', currentMuteState, 'isPlaying:', isPlaying, 'paused:', bgMusic.paused, 'userManuallyToggled:', globalAudioState.userManuallyToggled);
                 return;
+            }
+            
+            // Fallback: if we get here, audio hasn't been started, so try to start it
+            console.log('Fallback: attempting to start audio...');
+            globalAudioState.userManuallyToggled = true;
+            bgMusic.muted = false;
+            const playPromise = bgMusic.play();
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    isPlaying = true;
+                    userInteracted = true;
+                    hasEverPlayed = true;
+                    syncStateToGlobal();
+                    updateIcon();
+                    console.log('Audio started via fallback');
+                }).catch((err) => {
+                    console.error('Could not start audio:', err);
+                });
             }
         }
 
@@ -1068,6 +1189,12 @@
             updateProgressBar(progress);
             throw error;
         }
+    }
+
+    // Load multiple assets in parallel for faster loading
+    async function loadAssetsInParallel(urls) {
+        const promises = urls.map(url => loadAssetWithProgress(url));
+        return Promise.all(promises);
     }
 
     // Create loading screen with flashlight effect
@@ -5852,14 +5979,12 @@
     // Load the background textures using Assets API (bg1.png, bg2.png, bg3.png)
     try {
         console.log('Loading background frames...');
-        const backgroundTextures = [];
-
-        // Load all 3 background frames (bg1.png, bg2.png, bg3.png)
-        for (let i = 1; i <= 3; i++) {
-            const texture = await loadAssetWithProgress(`assets/bg${i}.png`);
-            backgroundTextures.push(texture);
-            console.log(`  Loaded bg${i}.png:`, texture.width, 'x', texture.height);
-        }
+        // Load all 3 background frames in parallel for faster loading
+        const backgroundUrls = Array.from({ length: 3 }, (_, i) => `assets/bg${i + 1}.png`);
+        const backgroundTextures = await loadAssetsInParallel(backgroundUrls);
+        backgroundTextures.forEach((texture, i) => {
+            console.log(`  Loaded bg${i + 1}.png:`, texture.width, 'x', texture.height);
+        });
 
         // Get dimensions from first frame
         const firstTexture = backgroundTextures[0];
@@ -5902,13 +6027,11 @@
             // Load mutator capsule frames for animation
             console.log('Loading mutator capsule frames...');
             const mutatorCapsuleTexturePaths = Array.from({ length: 10 }, (_, index) => `assets/mutator_capsule${index + 1}.png`);
-            const mutatorCapsuleTextures = [];
-
-            for (const texturePath of mutatorCapsuleTexturePaths) {
-                const texture = await loadAssetWithProgress(texturePath);
-                mutatorCapsuleTextures.push(texture);
-                console.log(`  Loaded ${texturePath}:`, texture.width, 'x', texture.height);
-            }
+            // Load all mutator capsule frames in parallel for faster loading
+            const mutatorCapsuleTextures = await loadAssetsInParallel(mutatorCapsuleTexturePaths);
+        mutatorCapsuleTextures.forEach((texture, i) => {
+                console.log(`  Loaded mutator_capsule${i + 1}.png:`, texture.width, 'x', texture.height);
+            });
 
             // Load mutator capsule stroke overlay for hover effect
             const mutatorCapsuleStrokeTexture = await loadAssetWithProgress('assets/mutator_capsule_stroke.png');
@@ -7277,14 +7400,12 @@
         // Load glitch animated frames (glitch0000.png to glitch0005.png - 6 frames total)
         try {
             console.log('Loading glitch frames...');
-            const glitchTextures = [];
-
-            // Load all 6 frames (0000 to 0005)
-            for (let i = 0; i < 6; i++) {
+            // Load all 6 glitch frames in parallel for faster loading
+            const glitchUrls = Array.from({ length: 6 }, (_, i) => {
                 const frameNum = i.toString().padStart(4, '0'); // Pad to 4 digits: 0000, 0001, etc.
-                const texture = await loadAssetWithProgress(`assets/glitch${frameNum}.png`);
-                glitchTextures.push(texture);
-            }
+                return `assets/glitch${frameNum}.png`;
+            });
+            const glitchTextures = await loadAssetsInParallel(glitchUrls);
 
             console.log(`  Loaded all ${glitchTextures.length} glitch frames`);
 
@@ -7795,27 +7916,23 @@
         // Load CCTV animated frames (cctv1.png to cctv3.png - 3 frames total)
         try {
             console.log('Loading CCTV frames...');
-            const cctvTextures = [];
-
-            // Load all 3 frames (cctv1.png, cctv2.png, cctv3.png)
-            for (let i = 1; i <= 3; i++) {
-                const texture = await loadAssetWithProgress(`assets/cctv${i}.png`);
-                cctvTextures.push(texture);
-                console.log(`  Loaded cctv${i}.png:`, texture.width, 'x', texture.height);
-            }
+            // Load all 3 CCTV frames in parallel for faster loading
+            const cctvUrls = Array.from({ length: 3 }, (_, i) => `assets/cctv${i + 1}.png`);
+            const cctvTextures = await loadAssetsInParallel(cctvUrls);
+            cctvTextures.forEach((texture, i) => {
+                console.log(`  Loaded cctv${i + 1}.png:`, texture.width, 'x', texture.height);
+            });
 
             console.log(`  Loaded all ${cctvTextures.length} CCTV frames`);
 
             // Load CCTV stroke animated frames (cctv1_stroke.png to cctv3_stroke.png - 3 frames total)
             console.log('Loading CCTV stroke frames...');
-            const cctvStrokeTextures = [];
-
-            // Load all 3 stroke frames (cctv1_stroke.png, cctv2_stroke.png, cctv3_stroke.png)
-            for (let i = 1; i <= 3; i++) {
-                const strokeTexture = await loadAssetWithProgress(`assets/cctv${i}_stroke.png`);
-                cctvStrokeTextures.push(strokeTexture);
-                console.log(`  Loaded cctv${i}_stroke.png:`, strokeTexture.width, 'x', strokeTexture.height);
-            }
+            // Load all 3 stroke frames in parallel for faster loading
+            const cctvStrokeUrls = Array.from({ length: 3 }, (_, i) => `assets/cctv${i + 1}_stroke.png`);
+            const cctvStrokeTextures = await loadAssetsInParallel(cctvStrokeUrls);
+            cctvStrokeTextures.forEach((texture, i) => {
+                console.log(`  Loaded cctv${i + 1}_stroke.png:`, texture.width, 'x', texture.height);
+            });
 
             console.log(`  Loaded all ${cctvStrokeTextures.length} CCTV stroke frames`);
 
@@ -8598,14 +8715,12 @@
         // Load Discord animated frames (discord1.png to discord8.png - 8 frames total)
         try {
             console.log('Loading Discord frames...');
-            const discordTextures = [];
-
-            // Load all 8 frames (discord1.png to discord8.png)
-            for (let i = 1; i <= 8; i++) {
-                const texture = await loadAssetWithProgress(`assets/discord${i}.png`);
-                discordTextures.push(texture);
-                console.log(`  Loaded discord${i}.png:`, texture.width, 'x', texture.height);
-            }
+            // Load all 8 Discord frames in parallel for faster loading
+            const discordUrls = Array.from({ length: 8 }, (_, i) => `assets/discord${i + 1}.png`);
+            const discordTextures = await loadAssetsInParallel(discordUrls);
+            discordTextures.forEach((texture, i) => {
+                console.log(`  Loaded discord${i + 1}.png:`, texture.width, 'x', texture.height);
+            });
 
             console.log(`  Loaded all ${discordTextures.length} Discord frames`);
 
@@ -8769,14 +8884,12 @@
         // Load Promo animated frames (promo1.png to promo10.png - 10 frames total)
         try {
             console.log('Loading Promo frames...');
-            const promoTextures = [];
-
-            // Load all 10 frames (promo1.png to promo10.png)
-            for (let i = 1; i <= 10; i++) {
-                const texture = await loadAssetWithProgress(`assets/promo${i}.png`);
-                promoTextures.push(texture);
-                console.log(`  Loaded promo${i}.png:`, texture.width, 'x', texture.height);
-            }
+            // Load all 10 Promo frames in parallel for faster loading
+            const promoUrls = Array.from({ length: 10 }, (_, i) => `assets/promo${i + 1}.png`);
+            const promoTextures = await loadAssetsInParallel(promoUrls);
+            promoTextures.forEach((texture, i) => {
+                console.log(`  Loaded promo${i + 1}.png:`, texture.width, 'x', texture.height);
+            });
 
             console.log(`  Loaded all ${promoTextures.length} Promo frames`);
 
@@ -8931,14 +9044,12 @@
         // Load Telegram animated frames (telegram1.png to telegram9.png - 9 frames total)
         try {
             console.log('Loading Telegram frames...');
-            const telegramTextures = [];
-
-            // Load all 9 frames (telegram1.png to telegram9.png)
-            for (let i = 1; i <= 9; i++) {
-                const texture = await loadAssetWithProgress(`assets/telegram${i}.png`);
-                telegramTextures.push(texture);
-                console.log(`  Loaded telegram${i}.png:`, texture.width, 'x', texture.height);
-            }
+            // Load all 9 Telegram frames in parallel for faster loading
+            const telegramUrls = Array.from({ length: 9 }, (_, i) => `assets/telegram${i + 1}.png`);
+            const telegramTextures = await loadAssetsInParallel(telegramUrls);
+            telegramTextures.forEach((texture, i) => {
+                console.log(`  Loaded telegram${i + 1}.png:`, texture.width, 'x', texture.height);
+            });
 
             console.log(`  Loaded all ${telegramTextures.length} Telegram frames`);
 
@@ -9104,14 +9215,12 @@
         // Load Blaised animated frames (blaised1.png to blaised6.png - 6 frames total)
         try {
             console.log('Loading Blaised frames...');
-            const blaisedTextures = [];
-
-            // Load all 6 frames (blaised1.png, blaised2.png, ..., blaised6.png)
-            for (let i = 1; i <= 6; i++) {
-                const texture = await loadAssetWithProgress(`assets/blaised${i}.png`);
-                blaisedTextures.push(texture);
-                console.log(`  Loaded blaised${i}.png:`, texture.width, 'x', texture.height);
-            }
+            // Load all 6 Blaised frames in parallel for faster loading
+            const blaisedUrls = Array.from({ length: 6 }, (_, i) => `assets/blaised${i + 1}.png`);
+            const blaisedTextures = await loadAssetsInParallel(blaisedUrls);
+            blaisedTextures.forEach((texture, i) => {
+                console.log(`  Loaded blaised${i + 1}.png:`, texture.width, 'x', texture.height);
+            });
 
             console.log(`  Loaded all ${blaisedTextures.length} Blaised frames`);
 
@@ -9214,14 +9323,12 @@
         // Using separate canvas with CSS mix-blend-mode for color dodge effect
         try {
             console.log('Loading Blaised Aura frames...');
-            const blaisedAuraTextures = [];
-
-            // Load all 6 frames (blaised1_aura.png, blaised2_aura.png, ..., blaised6_aura.png)
-            for (let i = 1; i <= 6; i++) {
-                const texture = await loadAssetWithProgress(`assets/blaised${i}_aura.png`);
-                blaisedAuraTextures.push(texture);
-                console.log(`  Loaded blaised${i}_aura.png:`, texture.width, 'x', texture.height);
-            }
+            // Load all 6 Blaised Aura frames in parallel for faster loading
+            const blaisedAuraUrls = Array.from({ length: 6 }, (_, i) => `assets/blaised${i + 1}_aura.png`);
+            const blaisedAuraTextures = await loadAssetsInParallel(blaisedAuraUrls);
+            blaisedAuraTextures.forEach((texture, i) => {
+                console.log(`  Loaded blaised${i + 1}_aura.png:`, texture.width, 'x', texture.height);
+            });
 
             console.log(`  Loaded all ${blaisedAuraTextures.length} Blaised Aura frames`);
 
@@ -9355,27 +9462,23 @@
         // Load Wall Art animated frames (wall_art1.png to wall_art6.png - 6 frames total)
         try {
             console.log('Loading Wall Art frames...');
-            const wallArtTextures = [];
-
-            // Load all 6 frames (wall_art1.png, wall_art2.png, ..., wall_art6.png)
-            for (let i = 1; i <= 6; i++) {
-                const texture = await loadAssetWithProgress(`assets/wall_art${i}.png`);
-                wallArtTextures.push(texture);
-                console.log(`  Loaded wall_art${i}.png:`, texture.width, 'x', texture.height);
-            }
+            // Load all 6 Wall Art frames in parallel for faster loading
+            const wallArtUrls = Array.from({ length: 6 }, (_, i) => `assets/wall_art${i + 1}.png`);
+            const wallArtTextures = await loadAssetsInParallel(wallArtUrls);
+            wallArtTextures.forEach((texture, i) => {
+                console.log(`  Loaded wall_art${i + 1}.png:`, texture.width, 'x', texture.height);
+            });
 
             console.log(`  Loaded all ${wallArtTextures.length} Wall Art frames`);
 
             // Load Wall Art stroke animated frames (wall_art1_stroke.png to wall_art6_stroke.png - 6 frames total)
             console.log('Loading Wall Art stroke frames...');
-            const wallArtStrokeTextures = [];
-
-            // Load all 6 stroke frames (wall_art1_stroke.png, wall_art2_stroke.png, ..., wall_art6_stroke.png)
-            for (let i = 1; i <= 6; i++) {
-                const strokeTexture = await loadAssetWithProgress(`assets/wall_art${i}_stroke.png`);
-                wallArtStrokeTextures.push(strokeTexture);
-                console.log(`  Loaded wall_art${i}_stroke.png:`, strokeTexture.width, 'x', strokeTexture.height);
-            }
+            // Load all 6 Wall Art stroke frames in parallel for faster loading
+            const wallArtStrokeUrls = Array.from({ length: 6 }, (_, i) => `assets/wall_art${i + 1}_stroke.png`);
+            const wallArtStrokeTextures = await loadAssetsInParallel(wallArtStrokeUrls);
+            wallArtStrokeTextures.forEach((texture, i) => {
+                console.log(`  Loaded wall_art${i + 1}_stroke.png:`, texture.width, 'x', texture.height);
+            });
 
             console.log(`  Loaded all ${wallArtStrokeTextures.length} Wall Art stroke frames`);
 
@@ -11618,19 +11721,24 @@
                 console.log('Current state isLightsOn:', lightsOffSprite?.userData?.isLightsOn);
                 
                 // Play light switch sound effect
-                // Check if user has interacted - if not, play anyway (bg music might be muted for autoplay)
+                // Check if audio is enabled and not muted
                 const bgMusic = document.getElementById('bg-music');
-                const userHasInteracted = bgMusic && (bgMusic.currentTime > 0 || !bgMusic.paused);
+                const audioIsEnabled = bgMusic && (bgMusic.currentTime > 0 || (!bgMusic.paused && bgMusic.readyState >= 2));
+                const isMuted = isGlobalAudioMuted();
                 
                 if (lightSwitchSound) {
-                    // If user hasn't interacted yet, play sound regardless of mute state
-                    // After interaction, respect the global mute state
-                    if (!userHasInteracted || !isGlobalAudioMuted()) {
+                    // Sync mute state with global audio state
+                    lightSwitchSound.muted = isMuted;
+                    
+                    // Only play if audio is enabled and not muted
+                    if (audioIsEnabled && !isMuted) {
                         // Reset to start and play
                         lightSwitchSound.currentTime = 0;
                         lightSwitchSound.play().catch((error) => {
                             console.warn('Could not play light switch sound:', error);
                         });
+                    } else {
+                        console.log('Light switch sound not played - audio not enabled or muted:', { audioIsEnabled, isMuted });
                     }
                 }
                 
@@ -11672,8 +11780,9 @@
             };
 
             // Trigger on pointer enter (hover)
-            lightsSwitchSprite.on('pointerenter', (event) => {
-                enableAudioOnSpriteInteraction(); // Enable audio on sprite interaction
+            lightsSwitchSprite.on('pointerenter', async (event) => {
+                // Enable audio FIRST before playing switch sound
+                await enableAudioOnSpriteInteraction();
                 event.stopPropagation(); // Prevent panning
                 isPointerOver = true;
                 
