@@ -2339,20 +2339,16 @@
         }
         
         /* Custom scrollbar design - unique and modern with glassmorphism effect */
-        /* Applied to all scrollable elements on all screen sizes including desktop */
+        /* Light scrollbar for detail modal and art modal */
         .detail-description::-webkit-scrollbar,
         .art-modal-left::-webkit-scrollbar,
-        .art-modal-artist-info::-webkit-scrollbar,
-        .book-art-description::-webkit-scrollbar,
-        .book-artist-info::-webkit-scrollbar {
+        .art-modal-artist-info::-webkit-scrollbar {
             width: 10px;
         }
         
         .detail-description::-webkit-scrollbar-track,
         .art-modal-left::-webkit-scrollbar-track,
-        .art-modal-artist-info::-webkit-scrollbar-track,
-        .book-art-description::-webkit-scrollbar-track,
-        .book-artist-info::-webkit-scrollbar-track {
+        .art-modal-artist-info::-webkit-scrollbar-track {
             background: linear-gradient(180deg, 
                 rgba(0, 0, 0, 0.1) 0%, 
                 rgba(0, 0, 0, 0.2) 50%, 
@@ -2364,9 +2360,7 @@
         
         .detail-description::-webkit-scrollbar-thumb,
         .art-modal-left::-webkit-scrollbar-thumb,
-        .art-modal-artist-info::-webkit-scrollbar-thumb,
-        .book-art-description::-webkit-scrollbar-thumb,
-        .book-artist-info::-webkit-scrollbar-thumb {
+        .art-modal-artist-info::-webkit-scrollbar-thumb {
             background: linear-gradient(180deg, 
                 rgba(255, 255, 255, 0.2) 0%, 
                 rgba(255, 255, 255, 0.4) 30%,
@@ -2384,9 +2378,7 @@
         
         .detail-description::-webkit-scrollbar-thumb::before,
         .art-modal-left::-webkit-scrollbar-thumb::before,
-        .art-modal-artist-info::-webkit-scrollbar-thumb::before,
-        .book-art-description::-webkit-scrollbar-thumb::before,
-        .book-artist-info::-webkit-scrollbar-thumb::before {
+        .art-modal-artist-info::-webkit-scrollbar-thumb::before {
             content: '';
             position: absolute;
             top: 50%;
@@ -2400,9 +2392,7 @@
         
         .detail-description::-webkit-scrollbar-thumb:hover,
         .art-modal-left::-webkit-scrollbar-thumb:hover,
-        .art-modal-artist-info::-webkit-scrollbar-thumb:hover,
-        .book-art-description::-webkit-scrollbar-thumb:hover,
-        .book-artist-info::-webkit-scrollbar-thumb:hover {
+        .art-modal-artist-info::-webkit-scrollbar-thumb:hover {
             background: linear-gradient(180deg, 
                 rgba(255, 255, 255, 0.3) 0%, 
                 rgba(255, 255, 255, 0.5) 30%,
@@ -2418,9 +2408,7 @@
         
         .detail-description::-webkit-scrollbar-thumb:active,
         .art-modal-left::-webkit-scrollbar-thumb:active,
-        .art-modal-artist-info::-webkit-scrollbar-thumb:active,
-        .book-art-description::-webkit-scrollbar-thumb:active,
-        .book-artist-info::-webkit-scrollbar-thumb:active {
+        .art-modal-artist-info::-webkit-scrollbar-thumb:active {
             background: linear-gradient(180deg, 
                 rgba(255, 255, 255, 0.4) 0%, 
                 rgba(255, 255, 255, 0.6) 30%,
@@ -2436,11 +2424,92 @@
         /* Firefox scrollbar styling - applied to all scrollable elements */
         .detail-description,
         .art-modal-left,
-        .art-modal-artist-info,
+        .art-modal-artist-info {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.4) rgba(0, 0, 0, 0.15);
+        }
+        
+        /* Dark scrollbar for book pages */
         .book-art-description,
         .book-artist-info {
             scrollbar-width: thin;
-            scrollbar-color: rgba(255, 255, 255, 0.4) rgba(0, 0, 0, 0.15);
+            scrollbar-color: rgba(0, 0, 0, 0.5) rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Dark scrollbar design specifically for book pages */
+        .book-art-description::-webkit-scrollbar,
+        .book-artist-info::-webkit-scrollbar {
+            width: 10px;
+        }
+        
+        .book-art-description::-webkit-scrollbar-track,
+        .book-artist-info::-webkit-scrollbar-track {
+            background: linear-gradient(180deg, 
+                rgba(0, 0, 0, 0.2) 0%, 
+                rgba(0, 0, 0, 0.3) 50%, 
+                rgba(0, 0, 0, 0.2) 100%);
+            border-radius: 12px;
+            margin: 8px 0;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        
+        .book-art-description::-webkit-scrollbar-thumb,
+        .book-artist-info::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, 
+                rgba(0, 0, 0, 0.4) 0%, 
+                rgba(0, 0, 0, 0.6) 30%,
+                rgba(0, 0, 0, 0.7) 50%,
+                rgba(0, 0, 0, 0.6) 70%,
+                rgba(0, 0, 0, 0.4) 100%);
+            border-radius: 12px;
+            border: 2px solid rgba(0, 0, 0, 0.2);
+            box-shadow: 
+                inset 0 0 8px rgba(0, 0, 0, 0.3),
+                0 0 12px rgba(0, 0, 0, 0.2),
+                0 2px 4px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+        
+        .book-art-description::-webkit-scrollbar-thumb::before,
+        .book-artist-info::-webkit-scrollbar-thumb::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 4px;
+            height: 60%;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 2px;
+        }
+        
+        .book-art-description::-webkit-scrollbar-thumb:hover,
+        .book-artist-info::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, 
+                rgba(0, 0, 0, 0.5) 0%, 
+                rgba(0, 0, 0, 0.7) 30%,
+                rgba(0, 0, 0, 0.8) 50%,
+                rgba(0, 0, 0, 0.7) 70%,
+                rgba(0, 0, 0, 0.5) 100%);
+            box-shadow: 
+                inset 0 0 10px rgba(0, 0, 0, 0.4),
+                0 0 18px rgba(0, 0, 0, 0.3),
+                0 3px 6px rgba(0, 0, 0, 0.4);
+            border-color: rgba(0, 0, 0, 0.3);
+        }
+        
+        .book-art-description::-webkit-scrollbar-thumb:active,
+        .book-artist-info::-webkit-scrollbar-thumb:active {
+            background: linear-gradient(180deg, 
+                rgba(0, 0, 0, 0.6) 0%, 
+                rgba(0, 0, 0, 0.8) 30%,
+                rgba(0, 0, 0, 0.9) 50%,
+                rgba(0, 0, 0, 0.8) 70%,
+                rgba(0, 0, 0, 0.6) 100%);
+            box-shadow: 
+                inset 0 0 12px rgba(0, 0, 0, 0.5),
+                0 0 24px rgba(0, 0, 0, 0.4),
+                0 4px 8px rgba(0, 0, 0, 0.5);
         }
         
         /* Ensure scrollbars are visible on desktop/big screens */
