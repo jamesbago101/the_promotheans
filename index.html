@@ -241,38 +241,17 @@
             }
         }
     </style>
-    <!-- Immediate loading screen - shows before JavaScript loads -->
+    <!-- Ensure black background from the very start - no white flash -->
     <style>
-        #immediate-loading-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+        html, body {
+            margin: 0;
+            padding: 0;
             background: #000000;
-            z-index: 10001;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 1;
-        }
-        #immediate-loading-screen.hidden {
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s ease-out;
-        }
-        #immediate-loading-screen img {
-            max-width: 300px;
-            width: 60%;
-            height: auto;
+            overflow: hidden;
         }
     </style>
 </head>
 <body>
-    <!-- Immediate loading screen - appears instantly -->
-    <div id="immediate-loading-screen">
-        <img src="assets/loading_screen_logo.png" alt="Loading" id="immediate-loading-logo">
-    </div>
     <div id="logo-container">
         <div id="logo-wrapper">
             <img id="main-logo" src="assets/main_logo.png" alt="The Prometheans Logo">

@@ -9,6 +9,21 @@
     // Get Application and Assets from PIXI namespace (CDN version)
     const { Application, Assets, Sprite, AnimatedSprite, Graphics, Container, Text, TextStyle } = PIXI;
 
+    // Declare sprite variables at the top to avoid temporal dead zone issues
+    // These will be initialized later when assets are loaded
+    let backgroundSprite = null;
+    let mutatorBgSprite = null;
+    let mutatorCapsuleSprite = null;
+    let mutatorCapsuleStrokeSprite = null;
+    let glitchSprite = null;
+    let cctvSprite = null;
+    let discordSprite = null;
+    let promoSprite = null;
+    let telegramSprite = null;
+    let wallArtSprite = null;
+    let blaisedSprite = null;
+    let blaisedAuraSprite = null;
+
     // Global banda
     const GLOBAL_FONT_FAMILY = 'Finger Paint';
     const GLOBAL_FONT_FAMILY_WITH_FALLBACK = `"${GLOBAL_FONT_FAMILY}", sans-serif`;
@@ -703,7 +718,7 @@
             // Resume all paused animations (AnimatedSprite only)
             const animatedSprites = [
                 globalMutatorCapsuleSprite,
-                backgroundSprite,
+                backgroundSprite, // May be undefined if not initialized yet
                 glitchSprite,
                 cctvSprite,
                 discordSprite,
@@ -712,7 +727,7 @@
                 wallArtSprite,
                 blaisedSprite,
                 blaisedAuraSprite
-            ];
+            ].filter(sprite => sprite !== undefined && sprite !== null); // Filter out undefined/null sprites
 
             animatedSprites.forEach(sprite => {
                 if (sprite) {
@@ -812,7 +827,7 @@
             // Resume all paused animations (AnimatedSprite only)
             const animatedSprites = [
                 globalMutatorCapsuleSprite,
-                backgroundSprite,
+                backgroundSprite, // May be undefined if not initialized yet
                 glitchSprite,
                 cctvSprite,
                 discordSprite,
@@ -821,7 +836,7 @@
                 wallArtSprite,
                 blaisedSprite,
                 blaisedAuraSprite
-            ];
+            ].filter(sprite => sprite !== undefined && sprite !== null); // Filter out undefined/null sprites
 
             animatedSprites.forEach(sprite => {
                 if (sprite && sprite.playing === false) {
@@ -853,18 +868,6 @@
     // Create loading screen with flashlight effect
     async function createLoadingScreen() {
         try {
-            // Hide immediate HTML loading screen once PIXI loading screen is ready
-            const immediateLoadingScreen = document.getElementById('immediate-loading-screen');
-            if (immediateLoadingScreen) {
-                immediateLoadingScreen.classList.add('hidden');
-                // Remove after transition
-                setTimeout(() => {
-                    if (immediateLoadingScreen.parentNode) {
-                        immediateLoadingScreen.parentNode.removeChild(immediateLoadingScreen);
-                    }
-                }, 300);
-            }
-            
             // Hide header logo during loading screen
             const mainLogo = document.getElementById('main-logo');
             const headerLogoContainer = document.getElementById('logo-container');
@@ -2203,22 +2206,17 @@
     }
 
     // Background sprite and texture dimensions
-    let backgroundSprite;
-    let mutatorBgSprite;
-    let mutatorCapsuleSprite;
-    let mutatorCapsuleStrokeSprite; // Stroke overlay for hover effect
+    // (Variables already declared at top of function to avoid temporal dead zone)
     let mutatorCapsuleDot; // Pulsing dot at center
     let mutatorCapsuleCircleText; // Circle with "click to explore" text
     let mutatorCapsuleTextSprite; // Text "MUTATOR" that appears on mutator capsule hover
     let mutatorCapsuleLabelText; // Simple label text for mobile/tablet (just "Mutator")
     let cupSprite;
-    let glitchSprite;
+    // glitchSprite, cctvSprite, discordSprite already declared at top
     let eyeLogoSprite;
-    let cctvSprite;
     let cctvTextSprite; // Text "X Account" that appears on CCTV hover
     let cctvDot; // Pulsing dot at center of CCTV
     let cctvCircleText; // Circle with "click to explore" text
-    let discordSprite; // Discord animated sprite (discord1.png to discord8.png)
     let discordGlitchSound; // Audio for discord glitch effect
     let promoGlitchSound; // Audio for promo glitch effect
     let telegramGlitchSound; // Audio for telegram glitch effect
@@ -2281,14 +2279,10 @@
             cupMoveSound.muted = isMuted;
         }
     }
-    let promoSprite; // Promo animated sprite (promo1.png to promo10.png)
-    let telegramSprite; // Telegram animated sprite (telegram1.png to telegram9.png)
+    // promoSprite, telegramSprite, wallArtSprite, blaisedSprite, blaisedAuraSprite already declared at top
     let cctvStrokeSprite; // Animated stroke overlay for hover effect (cctv1_stroke.png to cctv3_stroke.png)
     let cctvLabelText; // Simple label text for mobile/tablet (just "X Account")
-    let wallArtSprite; // Animated wall art sprite (wall_art1.png to wall_art6.png)
     let wallArtDot; // Pulsing dot at center of wall art
-    let blaisedSprite; // Animated blaised sprite (blaised1.png to blaised6.png)
-    let blaisedAuraSprite; // Animated blaised aura sprite (blaised1_aura.png to blaised6_aura.png) with color dodge blending
     let blaisedAuraApp; // Separate PIXI application for aura sprite with CSS mix-blend-mode
     let blaisedAction2Sprite; // Animated blaised action2 sprite (blaised_action2_1.png, blaised_action2_2.png)
     let blaisedAction2AuraSprite; // Animated blaised action2 aura sprite with color dodge blending
