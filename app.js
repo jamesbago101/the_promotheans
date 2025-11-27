@@ -5701,11 +5701,15 @@
         console.log('Loading background frames...');
         const backgroundTextures = [];
 
-        // Load all 3 background frames (bg1.png, bg2.png, bg3.png)
+        // Load all 3 background frames in parallel for faster loading
+        const bgPromises = [];
         for (let i = 1; i <= 3; i++) {
-            const texture = await Assets.load(`assets/bg${i}.png`);
-            backgroundTextures.push(texture);
-            console.log(`  Loaded bg${i}.png:`, texture.width, 'x', texture.height);
+            bgPromises.push(Assets.load(`assets/bg${i}.png`));
+        }
+        const bgTextures = await Promise.all(bgPromises);
+        for (let i = 0; i < bgTextures.length; i++) {
+            backgroundTextures.push(bgTextures[i]);
+            console.log(`  Loaded bg${i + 1}.png:`, bgTextures[i].width, 'x', bgTextures[i].height);
         }
 
         // Get dimensions from first frame
