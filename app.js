@@ -5750,16 +5750,17 @@
             mutatorBgSprite = new Sprite(mutatorBgTexture);
             mutatorBgSprite.anchor.set(0.5);
 
-            // Load mutator capsule frames for animation
+            // Load mutator capsule frames for animation (in parallel for faster loading)
             console.log('Loading mutator capsule frames...');
             const mutatorCapsuleTexturePaths = Array.from({ length: 10 }, (_, index) => `assets/mutator_capsule${index + 1}.png`);
-            const mutatorCapsuleTextures = [];
-
-            for (const texturePath of mutatorCapsuleTexturePaths) {
-                const texture = await Assets.load(texturePath);
-                mutatorCapsuleTextures.push(texture);
-                console.log(`  Loaded ${texturePath}:`, texture.width, 'x', texture.height);
-            }
+            // Load all mutator capsule textures in parallel
+            const mutatorCapsuleTextures = await Promise.all(
+                mutatorCapsuleTexturePaths.map(path => Assets.load(path))
+            );
+            // Log loaded textures
+            mutatorCapsuleTextures.forEach((texture, index) => {
+                console.log(`  Loaded ${mutatorCapsuleTexturePaths[index]}:`, texture.width, 'x', texture.height);
+            });
 
             // Load mutator capsule stroke overlay for hover effect
             const mutatorCapsuleStrokeTexture = await Assets.load('assets/mutator_capsule_stroke.png');
