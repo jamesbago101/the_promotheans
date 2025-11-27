@@ -740,6 +740,8 @@
             gap: 10px;
             flex-wrap: wrap;
             margin-top: 30px;
+            visibility: visible;
+            opacity: 1;
         }
         
         .pagination-btn {
@@ -807,6 +809,20 @@
             .pagination-btn {
                 padding: 8px 14px;
                 font-size: 14px;
+            }
+            
+            .gallery-pagination {
+                display: flex !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .gallery-pagination {
+                display: flex !important;
+                visibility: visible !important;
+                opacity: 1 !important;
             }
         }
 
@@ -1365,6 +1381,11 @@
             display: flex;
             flex-direction: column;
             gap: 15px;
+            max-height: 100%;
+            overflow-y: auto;
+            padding-right: 10px;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(0, 0, 0, 0.3) rgba(0, 0, 0, 0.1);
         }
         
         @media (max-width: 768px) {
@@ -1510,6 +1531,11 @@
             line-height: 1.8;
             color: #333;
             margin-top: 15px;
+            max-height: 50vh;
+            overflow-y: auto;
+            padding-right: 15px;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(0, 0, 0, 0.3) rgba(0, 0, 0, 0.1);
         }
 
         .book-art-category {
@@ -1545,6 +1571,11 @@
             display: flex;
             flex-direction: column;
             gap: 20px;
+            max-height: 100%;
+            overflow-y: auto;
+            padding-right: 10px;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(0, 0, 0, 0.3) rgba(0, 0, 0, 0.1);
         }
 
         .book-art-image {
@@ -1670,6 +1701,10 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            position: relative;
+            padding-right: 20px; /* Space for custom scrollbar */
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.4) rgba(0, 0, 0, 0.15);
         }
         
         .art-modal-right {
@@ -1698,13 +1733,25 @@
         .art-modal-image-container img,
         .art-modal-full-image {
             max-width: 100%;
-            max-height: 100%;
+            max-height: 80vh; /* Limit height to 80% of viewport height for portrait images */
             width: auto;
             height: auto;
             object-fit: contain;
             border-radius: 8px;
             border: 3px solid #333;
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        }
+        
+        /* Additional constraint for portrait images (height > width) */
+        .art-modal-image-container img[style*="height"],
+        .art-modal-full-image[style*="height"] {
+            max-height: 75vh !important;
+        }
+        
+        /* Ensure image container doesn't overflow */
+        .art-modal-image-container {
+            overflow: auto;
+            max-height: 100%;
         }
         
         /* Responsive Modal */
@@ -2228,16 +2275,21 @@
         .detail-image-container {
             position: relative;
             border-radius: 20px;
-            overflow: hidden;
+            overflow: auto;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
             background: rgba(30, 30, 30, 0.8);
+            max-height: 75vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .detail-image {
-            width: 100%;
+            width: auto;
+            max-width: 100%;
             height: auto;
+            max-height: 75vh;
             display: block;
-            max-height: 80vh;
             object-fit: contain;
         }
 
@@ -2245,6 +2297,7 @@
             display: flex;
             flex-direction: column;
             justify-content: center;
+            position: relative;
         }
 
         .detail-number {
@@ -2273,11 +2326,196 @@
         }
 
         .detail-description {
-            font-size: 1.2rem;
+            font-size: clamp(0.9rem, 1.2rem + 0.5vh, 1.4rem); /* Responsive font size based on viewport height */
             line-height: 1.8;
             opacity: 0.9;
             margin-bottom: 30px;
             color: rgba(255, 255, 255, 0.9);
+            max-height: 50vh; /* Limit description height on tall screens */
+            overflow-y: auto; /* Allow scrolling if description is too long */
+            padding-right: 15px; /* Space for custom scrollbar */
+            scrollbar-width: thin; /* Firefox */
+            scrollbar-color: rgba(255, 255, 255, 0.3) rgba(0, 0, 0, 0.1); /* Firefox */
+        }
+        
+        /* Custom scrollbar design - unique and modern with glassmorphism effect */
+        /* Applied to all scrollable elements on all screen sizes including desktop */
+        .detail-description::-webkit-scrollbar,
+        .art-modal-left::-webkit-scrollbar,
+        .art-modal-artist-info::-webkit-scrollbar,
+        .book-art-description::-webkit-scrollbar,
+        .book-artist-info::-webkit-scrollbar {
+            width: 10px;
+        }
+        
+        .detail-description::-webkit-scrollbar-track,
+        .art-modal-left::-webkit-scrollbar-track,
+        .art-modal-artist-info::-webkit-scrollbar-track,
+        .book-art-description::-webkit-scrollbar-track,
+        .book-artist-info::-webkit-scrollbar-track {
+            background: linear-gradient(180deg, 
+                rgba(0, 0, 0, 0.1) 0%, 
+                rgba(0, 0, 0, 0.2) 50%, 
+                rgba(0, 0, 0, 0.1) 100%);
+            border-radius: 12px;
+            margin: 8px 0;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .detail-description::-webkit-scrollbar-thumb,
+        .art-modal-left::-webkit-scrollbar-thumb,
+        .art-modal-artist-info::-webkit-scrollbar-thumb,
+        .book-art-description::-webkit-scrollbar-thumb,
+        .book-artist-info::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, 
+                rgba(255, 255, 255, 0.2) 0%, 
+                rgba(255, 255, 255, 0.4) 30%,
+                rgba(255, 255, 255, 0.5) 50%,
+                rgba(255, 255, 255, 0.4) 70%,
+                rgba(255, 255, 255, 0.2) 100%);
+            border-radius: 12px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 
+                inset 0 0 8px rgba(255, 255, 255, 0.2),
+                0 0 12px rgba(255, 255, 255, 0.15),
+                0 2px 4px rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+        
+        .detail-description::-webkit-scrollbar-thumb::before,
+        .art-modal-left::-webkit-scrollbar-thumb::before,
+        .art-modal-artist-info::-webkit-scrollbar-thumb::before,
+        .book-art-description::-webkit-scrollbar-thumb::before,
+        .book-artist-info::-webkit-scrollbar-thumb::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 4px;
+            height: 60%;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 2px;
+        }
+        
+        .detail-description::-webkit-scrollbar-thumb:hover,
+        .art-modal-left::-webkit-scrollbar-thumb:hover,
+        .art-modal-artist-info::-webkit-scrollbar-thumb:hover,
+        .book-art-description::-webkit-scrollbar-thumb:hover,
+        .book-artist-info::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, 
+                rgba(255, 255, 255, 0.3) 0%, 
+                rgba(255, 255, 255, 0.5) 30%,
+                rgba(255, 255, 255, 0.6) 50%,
+                rgba(255, 255, 255, 0.5) 70%,
+                rgba(255, 255, 255, 0.3) 100%);
+            box-shadow: 
+                inset 0 0 10px rgba(255, 255, 255, 0.3),
+                0 0 18px rgba(255, 255, 255, 0.25),
+                0 3px 6px rgba(0, 0, 0, 0.3);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        .detail-description::-webkit-scrollbar-thumb:active,
+        .art-modal-left::-webkit-scrollbar-thumb:active,
+        .art-modal-artist-info::-webkit-scrollbar-thumb:active,
+        .book-art-description::-webkit-scrollbar-thumb:active,
+        .book-artist-info::-webkit-scrollbar-thumb:active {
+            background: linear-gradient(180deg, 
+                rgba(255, 255, 255, 0.4) 0%, 
+                rgba(255, 255, 255, 0.6) 30%,
+                rgba(255, 255, 255, 0.7) 50%,
+                rgba(255, 255, 255, 0.6) 70%,
+                rgba(255, 255, 255, 0.4) 100%);
+            box-shadow: 
+                inset 0 0 12px rgba(255, 255, 255, 0.4),
+                0 0 24px rgba(255, 255, 255, 0.35),
+                0 4px 8px rgba(0, 0, 0, 0.4);
+        }
+        
+        /* Firefox scrollbar styling - applied to all scrollable elements */
+        .detail-description,
+        .art-modal-left,
+        .art-modal-artist-info,
+        .book-art-description,
+        .book-artist-info {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.4) rgba(0, 0, 0, 0.15);
+        }
+        
+        /* Ensure scrollbars are visible on desktop/big screens */
+        @media (min-width: 769px) {
+            .detail-description,
+            .art-modal-left,
+            .art-modal-artist-info,
+            .book-art-description,
+            .book-artist-info {
+                scrollbar-width: thin !important;
+            }
+            
+            .detail-description::-webkit-scrollbar,
+            .art-modal-left::-webkit-scrollbar,
+            .art-modal-artist-info::-webkit-scrollbar,
+            .book-art-description::-webkit-scrollbar,
+            .book-artist-info::-webkit-scrollbar {
+                width: 10px !important;
+                display: block !important;
+            }
+        }
+        
+        /* Long press indicator */
+        .long-press-indicator {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+        }
+        
+        .long-press-indicator.active {
+            display: flex;
+            animation: pulseIndicator 0.6s ease-in-out infinite;
+        }
+        
+        .long-press-indicator::before {
+            content: '↑↓';
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 20px;
+            font-weight: bold;
+        }
+        
+        @keyframes pulseIndicator {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 0.8;
+            }
+            50% {
+                transform: scale(1.1);
+                opacity: 1;
+            }
+        }
+        
+        /* Adjust font size for very tall screens */
+        @media (min-height: 1200px) {
+            .detail-description {
+                font-size: clamp(0.85rem, 1rem + 0.3vh, 1.2rem);
+                max-height: 45vh;
+            }
+        }
+        
+        @media (min-height: 1600px) {
+            .detail-description {
+                font-size: clamp(0.8rem, 0.95rem + 0.2vh, 1.1rem);
+                max-height: 40vh;
+            }
         }
 
         .detail-artist {
@@ -3396,29 +3634,208 @@
                 description: 'You already know…@burnt_xion team are in Korea 🇰🇷 and the energy is unmatched!  Korea🇰🇷can feel the heat🔥,the passion, the culture, and $XION energy all the way. Made it in right before the deadline @kayd_kova, even though my tablet had other plans😭😅 @Prajjwal08  @BurntUnagi_apac @BurntFondue @0xAtoz',
        
             },
-                 {
-                id: 6,
-                image: 'assets/gallery_images/6.jpg',
+      
+            {
+                id: 7,
+                image: 'assets/gallery_images/7.jpg',
                 category: 'XION in Korea',
                 title: '',
-                artist: 'Cruz',
-                xHandle: '@cruz_w3',
-                xUrl: 'https://x.com/@cruz_w3',
-                description: 'You already know…@burnt_xion team are in Korea 🇰🇷 and the energy is unmatched!  Korea🇰🇷can feel the heat🔥,the passion, the culture, and $XION energy all the way. Made it in right before the deadline @kayd_kova, even though my tablet had other plans😭😅 @Prajjwal08  @BurntUnagi_apac @BurntFondue @0xAtoz',
+                artist: 'GABZILLA',
+                xHandle: '@gabzilla_eth',
+                xUrl: 'https://x.com/@gabzilla_eth',
+                description: 'My submission 😅'
        
             },
 
             {
-                id: 6,
-                image: 'assets/gallery_images/6.jpg',
+                id: 8,
+                image: 'assets/gallery_images/8.jpg',
                 category: 'XION in Korea',
                 title: '',
-                artist: 'Cruz',
-                xHandle: '@cruz_w3',
-                xUrl: 'https://x.com/@cruz_w3',
-                description: 'You already know…@burnt_xion team are in Korea 🇰🇷 and the energy is unmatched!  Korea🇰🇷can feel the heat🔥,the passion, the culture, and $XION energy all the way. Made it in right before the deadline @kayd_kova, even though my tablet had other plans😭😅 @Prajjwal08  @BurntUnagi_apac @BurntFondue @0xAtoz',
+                artist: 'IceBear',
+                xHandle: '@Blvxkyy',
+                xUrl: 'https://x.com/Blvxkyy',
+                description: 'To @burnt_xion, the Goated Hombres @BurntBanksy @BurntFondue @BurntUnagi_apac @Prajjwal08 @ZBurntBarrel Banks and the crew found themselves crammed into a tiny food stall, plates stacked high, laughter spilling like soju. Flames set aside for juicy skewers of Beef and Corn.',
        
-            }
+            },
+            {
+                id: 9,
+                image: 'assets/gallery_images/9.jpg',
+                category: 'XION in Korea',
+                title: '',
+                artist: 'DAYVE',
+                xHandle: '@Dayve17_',
+                xUrl: 'https://x.com/Dayve17_',
+                description: 'The Prometheans have been everywhere on my feed today and for good reason. With the burning event approaching, things are about to get 🔥 real 🔥. Unminted Prometheans? Gone. Forever. No reruns. No Launchpads. Just ~3,000 will survive. This week is your final chance to mint one before they\'re permanently burned to ashes. And with all that\'s coming next in the XION ecosystem... you\'ll never know when owning a Promethean might just change the game. 👉 <a href="https://xion.talis.art/collection/680f65c18d37e5bcd70be0dd" target="_blank" rel="noopener noreferrer">View Collection</a>'
+       
+            },
+            {
+                id: 10,
+                image: 'assets/gallery_images/10.jpg',
+                category: 'XION in Korea',
+                title: '',
+                artist: 'Afro_v',
+                xHandle: '@afro_v1',
+                xUrl: 'https://x.com/afro_v1',
+                description: 'Taking aim for Xion @burnt_xion. Inspired by the fire of @Prajjwal08 (coolest Promethean🥵). Finished this piece some days ago, couldn\'t get around to posting because of my finals😫. You\'ll be seeing more of me now😈🥂'
+       
+            },
+            {
+                id: 11,
+                image: 'assets/gallery_images/11.jpg',
+                category: 'XION in Korea',
+                title: '',
+                artist: 'Ifeanyi Chukwuemeka',
+                xHandle: '@Shingapuo',
+                xUrl: 'https://x.com/Shingapuo',
+                description: 'Gm guys another day another fan art I made for @burnt_xion @ThePrometheans_ Rate my outfit 😊💯   3hrs  well spent 😅 #Fanarts'
+       
+            },
+            {
+                id: 12,
+                image: 'assets/gallery_images/12.jpg',
+                category: 'XION in Korea',
+                title: '',
+                artist: 'HIM',
+                xHandle: '@WillyisHIM',
+                xUrl: 'https://x.com/@WillyisHIM',
+                description: 'I made up my mind to be burnt! And that’s to become a @burnt_xion believer. This here is an art piece i’m placing as offering. Inspired by the pfp of @BurntBanksy. Believe in something.'
+       
+            },
+            {
+                id: 13,
+                image: 'assets/gallery_images/13.jpg',
+                category: 'XION in Korea',
+                title: '',
+                artist: 'K77',
+                xHandle: '@Kenri77',
+                xUrl: 'https://x.com/Kenri77',
+                description: 'Inspired by @BurntBanksy\'s pfp😄. Which of the voices in your head is your friend?🌚 Choose wisely... @burnt_xion #burntxion #Web3 #NFT #fanart Made on @MediBangPaint_e'
+       
+            },
+            {
+                id: 14,
+                image: 'assets/gallery_images/14.jpg',
+                category: 'XION in Korea',
+                title: '',
+                artist: 'KOVA',
+                xHandle: '@kayd_kova',
+                xUrl: 'https://x.com/kayd_kova',
+                description: 'Here\'s a cool concept art I\'ve wanted to make for a while now, so glad I finally had time to create one for XION. I\'m a big anime lover and I\'ve always wondered what @ThePrometheans_ Burnt Banksy 1/1 would look like if it were akasukti from Naruto. Here\'s what I came up with, with itachi as the rightful reference of course 🤝 @burnt_xion'
+       
+            },
+            {
+                id: 15,
+                image: 'assets/gallery_images/15.jpg',
+                category: 'XION in Korea',
+                title: '',
+                artist: 'Ifeanyi Chukwuemeka',
+                xHandle: '@Shingapuo',
+                xUrl: 'https://x.com/Shingapuo',
+                description: 'Finally got to the end of it 😅🤭 final illustration for the fan art I made for @burnt_xion NFT In his sport outfit heading to the guy in his car... What you looking at 😅😂 @ThePrometheans_'
+       
+            },
+            {
+                id: 16,
+                image: 'assets/gallery_images/16.jpg',
+                category: 'XION in Korea',
+                title: '',
+                artist: 'weirdocat',
+                xHandle: '@fweirdocat',
+                xUrl: 'https://x.com/fweirdocat',
+                description: 'Hey XION believers 🫶🏻 I finally finished my new painting 🎨🔥 what do you think?😍 In this piece I painted the Prometheans stand before a XION portal. A radiant light shines from within guiding the path toward the future of Web3 where simplicity and seamless UX lead the way. Each Promethean carries their own color and style, representing the diversity and strength of the community. Yet all of them look in the same direction: crossing the portal and stepping into the new world being built with XION. This gateway reflects the vision of XION an ecosystem where complexity fades away and users experience clarity, unity and true accessibility. To me the Prometheans are more than NFT characters they embody the community itself. A collective of creativity, belief and unity that proves the real power of Web3 lies in its people. This artwork is a reminder XION is not just a project it\'s a shared journey. A movement toward a borderless future, built on hope and belief in something greater.✨🔥'
+       
+            },
+            {
+                id: 17,
+                image: 'assets/gallery_images/12.jpg',
+                category: 'XION in Korea',
+                title: '',
+                artist: 'XION Nigeria',
+                xHandle: '@xion_nigeria',
+                xUrl: 'https://x.com/@xion_nigeria',
+                description: 'Just spotted @ThePrometheans_at the XION Nigeria Bootcamp. 🇳🇬🔥Find the intern to get yours!'
+       
+            },
+            {
+                id: 18,
+                image: 'assets/gallery_images/18.jpg',
+                category: 'XION in Korea',
+                title: '',
+                artist: 'NOBRAIN',
+                xHandle: '@rosabasir10',
+                xUrl: 'https://x.com/rosabasir10',
+                description: 'Burnt Banksy Promethean! 🔥 Just finished this piece, Inspired by Burnt banksy NFT. Saw the profile of @BurntBanksy, The CEO of XION and decided to draw it! And I would love to hear your thoughts! You can own your own Promethean NFT! All you have to do is mint a naked NFT of @ThePrometheans_ and mutate it! Make it unique and join the army of The prometheans. Here is the link: <a href="http://xion.talis.art/launchpad" target="_blank" rel="noopener noreferrer">xion.talis.art/launchpad</a> Meanwhile believe in XION and its Ecosystem.'
+       
+            },
+            {
+                id: 19,
+                image: 'assets/gallery_images/19.jpg',
+                category: 'XION in Korea',
+                title: '',
+                artist: 'Chrisncreation.inj',
+                xHandle: '@NwudeChris1',
+                xUrl: 'https://x.com/@NwudeChris1',
+                description: 'Expect the unexpected from @ThePrometheans_& @burnt_xion! 🔥 The notion that many NFTs are dead is prevalent, yet $XION is actively working to dismantle the existing auction house paradigm.Believe in something 👇'
+       
+            },
+
+            {
+                id: 20,
+                image: 'assets/gallery_images/20.jpg',
+                category: 'XION in Korea',
+                title: '',
+                artist: 'DANIEL',
+                xHandle: '@daniarchibong_',
+                xUrl: 'https://x.com/@daniarchibong_',
+                description: 'Last weekend, I rocked a 1/1 @ThePrometheans_Believe Hoodie to the @AvaxTeam1 Conference at Victory Chapel, Nigeria. I spoke on the opportunities for creators in web3, highlighting a pacesetter in infofi, @KaitoAI, and @burnt_xion’s proof of creativity.'
+       
+            },
+
+            {
+                id: 21,
+                image: 'assets/gallery_images/21.jpg',
+                category: 'XION in Korea',
+                title: '',
+                artist: 'antarrow',
+                xHandle: '@_antarrow_',
+                xUrl: 'https://x.com/@_antarrow_',
+                description: 'I\'ve immersed myself in art, I create, and I get a kick out of this process, I get a kick out of it when people get into it. This is my true creation. @ThePrometheans_ #XION @PX_Santol'
+       
+            },
+            {
+                id: 22,
+                image: 'assets/gallery_images/22.jpg',
+                category: 'XION in Korea',
+                title: '',
+                artist: 'Pranshu (winter arc)',
+                xHandle: '@_antarrow_',
+                xUrl: 'https://x.com/_antarrow_',
+                description: 'So here\'s what I was cooking!! In this noise of @KaitoAI on @burnt_xion I wanted to do something real. So I tried to put all the OGs of @burnt_xion in a single frame! Let\'s see can I reach the feed of everyone present in this frame - @BurntFondue @BurntBanksy @xAdamBates @jsbmudit @Prajjwal08 @BurntUnagi_apac @zabolotniyD @0xAtoz @ZBurntBarrel. Here is a 1:1 irl NFT to you guys from my side!'
+       
+            },
+            {
+                id: 23,
+                image: 'assets/gallery_images/23.jpg',
+                category: 'XION in Korea',
+                title: '',
+                artist: 'KOVA',
+                xHandle: '@kayd_kova',
+                xUrl: 'https://x.com/@kayd_kova',
+                description: 'Here\'s what my mind sees when I hear we can now MUTATE our pieces on @ThePrometheans_ Let your imagination go crazier than mine !'
+       
+            },
+            {
+                id: 24,
+                image: 'assets/gallery_images/24.jpg',
+                category: 'XION in Korea',
+                title: '',
+                artist: 'weirdocat',
+                xHandle: '@fweirdocat',
+                xUrl: 'https://x.com/fweirdocat',
+                description: 'Hey @BurntBanksy your new profile picture is ready :))🫶🏻 Even though I was surprised to see my unfinished painting get selected I think I should share the completed version too :)) I\'m still in shock and so happy. In just two weeks I was honored to be chosen as Top Content Creator for Week 2, and now for Week 3 as well. It\'s a privilege and I\'m truly glad that my paintings can contribute to the growth of this amazing community. Being part of the XION community feels like belonging to something bigger than myself. It\'s not just about a project it\'s about connection, creativity and shared goals. The support, encouragement and recognition my work has received from XION means a lot to me and it motivates me to keep creating and giving back to the community that inspires me every day.'
+       
+            },
         ];
 
         // Gallery functionality
@@ -3695,9 +4112,42 @@
                     <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z" fill="currentColor"/>
                 </svg>`;
                 
+                // Create image element with portrait detection
+                const img = document.createElement('img');
+                img.src = art.image;
+                img.alt = art.title;
+                img.className = 'detail-image';
+                
+                // Load image and check if it's portrait, then apply constraints
+                img.onload = function() {
+                    const isPortrait = img.naturalHeight > img.naturalWidth;
+                    
+                    // Special handling for id 4 (Happy's image) - make it smaller
+                    if (art.id === 4) {
+                        // Reduce size by 30% while maintaining aspect ratio
+                        if (isPortrait) {
+                            img.style.maxHeight = '45vh'; // Reduced from 65vh
+                            img.style.maxWidth = '70%'; // Reduced from 90%
+                        } else {
+                            img.style.maxHeight = '55vh'; // Reduced from 75vh
+                            img.style.maxWidth = '75%'; // Reduced from 100%
+                        }
+                    } else {
+                        // Normal constraints for other images
+                        if (isPortrait) {
+                            // For portrait images, limit height more strictly
+                            img.style.maxHeight = '65vh';
+                            img.style.maxWidth = '90%';
+                        } else {
+                            // For landscape images, use normal constraints
+                            img.style.maxHeight = '75vh';
+                            img.style.maxWidth = '100%';
+                        }
+                    }
+                };
+                
                 this.detailContent.innerHTML = `
                     <div class="detail-image-container">
-                        <img src="${art.image}" alt="${art.title}" class="detail-image">
                     </div>
                     <div class="detail-info">
                         <div class="detail-number">
@@ -3720,9 +4170,112 @@
                     </div>
                 `;
                 
+                // Add image to container with portrait detection
+                const container = this.detailContent.querySelector('.detail-image-container');
+                if (container) {
+                    container.appendChild(img);
+                }
+                
                 this.detailModal.classList.add('active');
                 document.body.style.overflow = 'hidden';
                 this.updateNavigation();
+                
+                // Add long press scrolling functionality
+                this.setupLongPressScrolling();
+            }
+            
+            setupLongPressScrolling() {
+                const detailInfo = this.detailContent.querySelector('.detail-info');
+                if (!detailInfo) return;
+                
+                let longPressTimer = null;
+                let isLongPressing = false;
+                let scrollDirection = 0; // 1 for down, -1 for up
+                let scrollInterval = null;
+                let indicator = null;
+                
+                const createIndicator = () => {
+                    if (indicator) return indicator;
+                    indicator = document.createElement('div');
+                    indicator.className = 'long-press-indicator';
+                    detailInfo.appendChild(indicator);
+                    return indicator;
+                };
+                
+                const startLongPress = (e, direction) => {
+                    if (longPressTimer) return;
+                    
+                    const rect = detailInfo.getBoundingClientRect();
+                    const centerY = rect.top + rect.height / 2;
+                    const clickY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+                    
+                    scrollDirection = clickY < centerY ? -1 : 1; // Up if clicked above center, down if below
+                    
+                    longPressTimer = setTimeout(() => {
+                        isLongPressing = true;
+                        const ind = createIndicator();
+                        ind.style.left = (rect.left + rect.width / 2 - 30) + 'px';
+                        ind.style.top = (rect.top + rect.height / 2 - 30) + 'px';
+                        ind.classList.add('active');
+                        
+                        // Start continuous scrolling
+                        scrollInterval = setInterval(() => {
+                            const scrollableElement = detailInfo.querySelector('.detail-description') || detailInfo;
+                            if (scrollableElement) {
+                                const scrollAmount = scrollDirection * 30; // Scroll 30px per interval
+                                scrollableElement.scrollBy({
+                                    top: scrollAmount,
+                                    behavior: 'auto'
+                                });
+                            }
+                        }, 50); // Scroll every 50ms
+                    }, 500); // 500ms long press delay
+                };
+                
+                const stopLongPress = () => {
+                    if (longPressTimer) {
+                        clearTimeout(longPressTimer);
+                        longPressTimer = null;
+                    }
+                    if (scrollInterval) {
+                        clearInterval(scrollInterval);
+                        scrollInterval = null;
+                    }
+                    if (isLongPressing) {
+                        isLongPressing = false;
+                        if (indicator) {
+                            indicator.classList.remove('active');
+                        }
+                    }
+                };
+                
+                // Mouse events
+                detailInfo.addEventListener('mousedown', (e) => {
+                    if (e.button === 0) { // Left mouse button
+                        startLongPress(e, 0);
+                    }
+                });
+                
+                detailInfo.addEventListener('mouseup', stopLongPress);
+                detailInfo.addEventListener('mouseleave', stopLongPress);
+                
+                // Touch events
+                detailInfo.addEventListener('touchstart', (e) => {
+                    startLongPress(e, 0);
+                }, { passive: true });
+                
+                detailInfo.addEventListener('touchend', stopLongPress);
+                detailInfo.addEventListener('touchcancel', stopLongPress);
+                detailInfo.addEventListener('touchmove', (e) => {
+                    // Cancel if user moves finger too much
+                    if (longPressTimer && e.touches && e.touches[0]) {
+                        const initialY = e.touches[0].clientY;
+                        // If moved more than 10px, cancel
+                        if (Math.abs(initialY - (e.touches[0].clientY || initialY)) > 10) {
+                            stopLongPress();
+                        }
+                    }
+                }, { passive: true });
             }
 
             closeDetail() {
@@ -5172,11 +5725,46 @@
                         console.error('artModalArtistInfo not found!');
                     }
                     
-                    // Render full image on right side
+                    // Render full image on right side with portrait detection
                     if (this.artModalImageContainer && rightContent.image) {
-                        this.artModalImageContainer.innerHTML = `
-                            <img src="${rightContent.image}" alt="${rightContent.title || ''}" class="art-modal-full-image">
-                        `;
+                        const img = document.createElement('img');
+                        img.src = rightContent.image;
+                        img.alt = rightContent.title || '';
+                        img.className = 'art-modal-full-image';
+                        
+                        // Get the art item to check id
+                        const artItem = artCollection.find(art => art.image === rightContent.image);
+                        
+                        // Load image and check if it's portrait, then apply constraints
+                        img.onload = function() {
+                            const isPortrait = img.naturalHeight > img.naturalWidth;
+                            
+                            // Special handling for id 4 (Happy's image) - make it smaller
+                            if (artItem && artItem.id === 4) {
+                                // Reduce size by 30% while maintaining aspect ratio
+                                if (isPortrait) {
+                                    img.style.maxHeight = '50vh'; // Reduced from 70vh
+                                    img.style.maxWidth = '70%'; // Reduced from 90%
+                                } else {
+                                    img.style.maxHeight = '60vh'; // Reduced from 80vh
+                                    img.style.maxWidth = '75%'; // Reduced from 100%
+                                }
+                            } else {
+                                // Normal constraints for other images
+                                if (isPortrait) {
+                                    // For portrait images, limit height more strictly
+                                    img.style.maxHeight = '70vh';
+                                    img.style.maxWidth = '90%';
+                                } else {
+                                    // For landscape images, use normal constraints
+                                    img.style.maxHeight = '80vh';
+                                    img.style.maxWidth = '100%';
+                                }
+                            }
+                        };
+                        
+                        this.artModalImageContainer.innerHTML = '';
+                        this.artModalImageContainer.appendChild(img);
                     } else {
                         console.error('artModalImageContainer not found or no image!');
                     }
@@ -5185,6 +5773,107 @@
                     this.artModal.classList.add('active');
                     document.body.style.overflow = 'hidden'; // Prevent background scrolling
                     console.log('Modal should be visible now');
+                    
+                    // Add long press scrolling functionality for art modal
+                    this.setupArtModalLongPressScrolling();
+                }
+                
+                setupArtModalLongPressScrolling() {
+                    const artModalLeft = document.querySelector('.art-modal-left');
+                    if (!artModalLeft) return;
+                    
+                    let longPressTimer = null;
+                    let isLongPressing = false;
+                    let scrollDirection = 0;
+                    let scrollInterval = null;
+                    let indicator = null;
+                    let startY = 0;
+                    
+                    const createIndicator = () => {
+                        if (indicator) return indicator;
+                        indicator = document.createElement('div');
+                        indicator.className = 'long-press-indicator';
+                        artModalLeft.appendChild(indicator);
+                        return indicator;
+                    };
+                    
+                    const startLongPress = (e) => {
+                        if (longPressTimer) return;
+                        
+                        const clientY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+                        startY = clientY;
+                        
+                        const rect = artModalLeft.getBoundingClientRect();
+                        const centerY = rect.top + rect.height / 2;
+                        
+                        scrollDirection = clientY < centerY ? -1 : 1;
+                        
+                        longPressTimer = setTimeout(() => {
+                            isLongPressing = true;
+                            const ind = createIndicator();
+                            ind.style.left = (rect.left + rect.width / 2 - 30) + 'px';
+                            ind.style.top = (rect.top + rect.height / 2 - 30) + 'px';
+                            ind.classList.add('active');
+                            
+                            scrollInterval = setInterval(() => {
+                                const scrollAmount = scrollDirection * 30;
+                                artModalLeft.scrollBy({
+                                    top: scrollAmount,
+                                    behavior: 'auto'
+                                });
+                            }, 50);
+                        }, 500);
+                    };
+                    
+                    const stopLongPress = () => {
+                        if (longPressTimer) {
+                            clearTimeout(longPressTimer);
+                            longPressTimer = null;
+                        }
+                        if (scrollInterval) {
+                            clearInterval(scrollInterval);
+                            scrollInterval = null;
+                        }
+                        if (isLongPressing) {
+                            isLongPressing = false;
+                            if (indicator) {
+                                indicator.classList.remove('active');
+                            }
+                        }
+                    };
+                    
+                    // Remove old listeners if any (cleanup)
+                    const newArtModalLeft = document.querySelector('.art-modal-left');
+                    if (newArtModalLeft && newArtModalLeft !== artModalLeft) {
+                        // If element changed, use new one
+                        return;
+                    }
+                    
+                    // Mouse events
+                    artModalLeft.addEventListener('mousedown', (e) => {
+                        if (e.button === 0) {
+                            startLongPress(e);
+                        }
+                    });
+                    
+                    artModalLeft.addEventListener('mouseup', stopLongPress);
+                    artModalLeft.addEventListener('mouseleave', stopLongPress);
+                    
+                    // Touch events
+                    artModalLeft.addEventListener('touchstart', (e) => {
+                        startLongPress(e);
+                    }, { passive: true });
+                    
+                    artModalLeft.addEventListener('touchend', stopLongPress);
+                    artModalLeft.addEventListener('touchcancel', stopLongPress);
+                    artModalLeft.addEventListener('touchmove', (e) => {
+                        if (longPressTimer && e.touches && e.touches[0]) {
+                            const currentY = e.touches[0].clientY;
+                            if (Math.abs(currentY - startY) > 10) {
+                                stopLongPress();
+                            }
+                        }
+                    }, { passive: true });
                 }
                 
                 closeModal() {
@@ -5352,6 +6041,28 @@
                     }
                 }
                 
+                scrollToGallery() {
+                    // Find the gallery section or wrapper to scroll to
+                    const gallerySection = document.getElementById('dressingSection');
+                    const galleryWrapper = document.getElementById('galleryWrapper');
+                    const targetElement = galleryWrapper || gallerySection;
+                    
+                    if (targetElement) {
+                        // Scroll to gallery section with offset for better visibility
+                        const offset = 100; // Offset from top
+                        const elementPosition = targetElement.getBoundingClientRect().top + window.pageYOffset;
+                        const offsetPosition = elementPosition - offset;
+                        
+                        window.scrollTo({
+                            top: offsetPosition,
+                            behavior: 'smooth'
+                        });
+                    } else {
+                        // Fallback: scroll to top if element not found
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                }
+                
                 renderGallery() {
                     if (!this.galleryContainer) return;
                     
@@ -5476,7 +6187,8 @@
                         if (this.currentPage > 1) {
                             this.currentPage--;
                             this.renderGallery();
-                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                            // Scroll to gallery section instead of top
+                            this.scrollToGallery();
                         }
                     });
                     this.galleryPagination.appendChild(prevBtn);
@@ -5497,7 +6209,8 @@
                         firstBtn.addEventListener('click', () => {
                             this.currentPage = 1;
                             this.renderGallery();
-                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                            // Scroll to gallery section instead of top
+                            this.scrollToGallery();
                         });
                         this.galleryPagination.appendChild(firstBtn);
                         
@@ -5519,7 +6232,8 @@
                         pageBtn.addEventListener('click', () => {
                             this.currentPage = i;
                             this.renderGallery();
-                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                            // Scroll to gallery section instead of top
+                            this.scrollToGallery();
                         });
                         this.galleryPagination.appendChild(pageBtn);
                     }
@@ -5538,7 +6252,8 @@
                         lastBtn.addEventListener('click', () => {
                             this.currentPage = totalPages;
                             this.renderGallery();
-                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                            // Scroll to gallery section instead of top
+                            this.scrollToGallery();
                         });
                         this.galleryPagination.appendChild(lastBtn);
                     }
@@ -5552,7 +6267,8 @@
                         if (this.currentPage < totalPages) {
                             this.currentPage++;
                             this.renderGallery();
-                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                            // Scroll to gallery section instead of top
+                            this.scrollToGallery();
                         }
                     });
                     this.galleryPagination.appendChild(nextBtn);
